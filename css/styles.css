@@ -1,0 +1,309 @@
+/* ============================================================
+   OratorIA - Sistema de Análisis de Presentación
+   Estilos globales
+   ============================================================ */
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* ---- Encabezado ---- */
+.header {
+    background-color: #2c3e50;
+    color: white;
+    padding: 15px 0;
+    text-align: center;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+/* ---- Layout principal ---- */
+.main-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.camera-container {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+}
+
+.stats-container {
+    flex: 1;
+    min-width: 300px;
+    background-color: white;
+    border-radius: 5px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.audio-container {
+    width: 100%;
+    margin-top: 20px;
+    background-color: white;
+    border-radius: 5px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* ---- Video y Canvas ---- */
+video,
+canvas {
+    width: 100%;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+#overlay-canvas,
+#combined-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* ---- Botones ---- */
+button {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 5px;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+button:disabled {
+    background-color: #bdc3c7;
+    cursor: not-allowed;
+}
+
+/* ---- Estado / alertas ---- */
+.status {
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+}
+
+.status.success {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.status.error {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.status.warning {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+/* ---- Barras de progreso ---- */
+.progress-container {
+    margin: 15px 0;
+    background-color: #f0f0f0;
+    border-radius: 10px;
+    height: 20px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.looking-bar {
+    background-color: #2ecc71;
+}
+
+.avoiding-bar {
+    background-color: #e74c3c;
+}
+
+/* ---- Cajas de estadísticas ---- */
+.stat-box {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+}
+
+.stat-value {
+    font-weight: bold;
+}
+
+/* ---- Spinner de carga ---- */
+.loading-spinner {
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border-left-color: #3498db;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+@keyframes spin {
+    0%   { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.center {
+    text-align: center;
+}
+
+/* ---- Instrucciones de configuración ---- */
+#setup-instructions {
+    background-color: #e1f5fe;
+    border-left: 5px solid #03a9f4;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 0 5px 5px 0;
+}
+
+#setup-instructions h3 {
+    margin-top: 0;
+}
+
+#setup-instructions ol {
+    margin-bottom: 0;
+}
+
+/* ---- Gráficas ---- */
+.chart-container {
+    height: 200px;
+    margin: 20px 0;
+}
+
+/* ---- Transcripción ---- */
+.transcript-container {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    margin-top: 10px;
+    background-color: #f9f9f9;
+}
+
+.transcript-line {
+    margin-bottom: 5px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #eee;
+}
+
+.transcript-line:last-child {
+    border-bottom: none;
+}
+
+.filler-word {
+    background-color: #ffecb3;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+/* ---- Categorías de muletillas ---- */
+.filler-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.filler-stat-box {
+    flex: 1;
+    min-width: 150px;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.low-filler {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.moderate-filler {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.high-filler {
+    background-color: #ffe0b2;
+    color: #e65100;
+}
+
+.extreme-filler {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+/* ---- Pestañas (Tabs) ---- */
+.tabs {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+.tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: #ddd;
+    border: none;
+    outline: none;
+    border-radius: 5px 5px 0 0;
+    margin-right: 5px;
+    color: #333;
+}
+
+.tab.active {
+    background-color: #3498db;
+    color: white;
+}
+
+/* ---- Instrucciones del servidor ---- */
+#server-instructions {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 768px) {
+    .main-content {
+        flex-direction: column;
+    }
+
+    .tabs {
+        flex-direction: column;
+    }
+
+    .tab {
+        margin-bottom: 2px;
+        border-radius: 5px;
+    }
+}

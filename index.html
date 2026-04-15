@@ -3,1654 +3,284 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Análisis de Presentación</title>
-    <!-- CDN optimizado para face-api.js -->
+    <title>OratorIA - Sistema de Análisis de Presentación</title>
+
+    <!-- Modelos de detección facial -->
     <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-    <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f5f5f5;
-            color: #333;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background-color: #2c3e50;
-            color: white;
-            padding: 15px 0;
-            text-align: center;
-            border-radius: 5px;
-            margin-bottom: 20px;
-        }
-        .main-content {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        .camera-container {
-            position: relative;
-            width: 100%;
-            max-width: 640px;
-        }
-        .stats-container {
-            flex: 1;
-            min-width: 300px;
-            background-color: white;
-            border-radius: 5px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .audio-container {
-            width: 100%;
-            margin-top: 20px;
-            background-color: white;
-            border-radius: 5px;
-            padding: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        video, canvas {
-            width: 100%;
-            border-radius: 5px;
-            margin-bottom: 10px;
-        }
-        #overlay-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-        button {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #2980b9;
-        }
-        button:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-        .status {
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-        }
-        .status.success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .status.error {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .status.warning {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        .progress-container {
-            margin: 15px 0;
-            background-color: #f0f0f0;
-            border-radius: 10px;
-            height: 20px;
-            overflow: hidden;
-        }
-        .progress-bar {
-            height: 100%;
-            border-radius: 10px;
-            transition: width 0.3s ease;
-        }
-        .looking-bar {
-            background-color: #2ecc71;
-        }
-        .avoiding-bar {
-            background-color: #e74c3c;
-        }
-        .stat-box {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding: 10px;
-            background-color: #f9f9f9;
-            border-radius: 5px;
-        }
-        .stat-value {
-            font-weight: bold;
-        }
-        .loading-spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border-left-color: #3498db;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 10px;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        .center {
-            text-align: center;
-        }
-        #setup-instructions {
-            background-color: #e1f5fe;
-            border-left: 5px solid #03a9f4;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 0 5px 5px 0;
-        }
-        #setup-instructions h3 {
-            margin-top: 0;
-        }
-        #setup-instructions ol {
-            margin-bottom: 0;
-        }
-        .chart-container {
-            height: 200px;
-            margin: 20px 0;
-        }
-        .transcript-container {
-            max-height: 200px;
-            overflow-y: auto;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 10px;
-            margin-top: 10px;
-            background-color: #f9f9f9;
-        }
-        .transcript-line {
-            margin-bottom: 5px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #eee;
-        }
-        .transcript-line:last-child {
-            border-bottom: none;
-        }
-        .filler-word {
-            background-color: #ffecb3;
-            padding: 2px 4px;
-            border-radius: 3px;
-        }
-        .filler-stats {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        .filler-stat-box {
-            flex: 1;
-            min-width: 150px;
-            padding: 10px;
-            border-radius: 5px;
-            text-align: center;
-        }
-        .low-filler {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .moderate-filler {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        .high-filler {
-            background-color: #ffe0b2;
-            color: #e65100;
-        }
-        .extreme-filler {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .tabs {
-            display: flex;
-            margin-bottom: 20px;
-        }
-        .tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            background-color: #ddd;
-            border: none;
-            outline: none;
-            border-radius: 5px 5px 0 0;
-            margin-right: 5px;
-        }
-        .tab.active {
-            background-color: #3498db;
-            color: white;
-        }
-        @media (max-width: 768px) {
-            .main-content {
-                flex-direction: column;
-            }
-            .tabs {
-                flex-direction: column;
-            }
-            .tab {
-                margin-bottom: 2px;
-                border-radius: 5px;
-            }
-        }
-    </style>
+    <!-- Gráficas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Estilos -->
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Sistema de Análisis de Presentación</h1>
-        </div>
-        
-        <div id="setup-instructions">
-            <h3>Instrucciones de Configuración</h3>
-            <ol>
-                <li><strong>Ejecutar desde servidor local:</strong> Para evitar problemas con Chrome, este sistema debe ejecutarse desde un servidor web.</li>
-                <li><strong>Permitir cámara y micrófono:</strong> Cuando el navegador lo solicite, asegúrate de permitir el acceso a la cámara y al micrófono.</li>
-                <li><strong>Carga de modelos:</strong> El sistema necesita descargar los modelos de reconocimiento facial (aproximadamente 6MB). Espera a que termine la carga antes de usar.</li>
-            </ol>
-            <button id="hide-instructions">Entendido, ocultar instrucciones</button>
-        </div>
-        
-        <div id="loading-models" class="center">
-            <div class="loading-spinner"></div>
-            <span>Cargando modelos de reconocimiento facial... (0%)</span>
-        </div>
-        
-        <div class="tabs">
-            <button class="tab active" onclick="showTab('gaze')">Seguimiento de Mirada</button>
-            <button class="tab" onclick="showTab('speech')">Análisis de Voz</button>
-            <button class="tab" onclick="showTab('combined')">Análisis Combinado</button>
-        </div>
-        
-        <div id="gaze" class="tab-content active">
-            <div class="main-content">
-                <div class="camera-container">
-                    <video id="video" autoplay muted playsinline></video>
-                    <canvas id="overlay-canvas"></canvas>
-                    
-                    <div class="controls">
-                        <button id="start-tracking">Iniciar Seguimiento</button>
-                        <button id="stop-tracking" disabled>Detener Seguimiento</button>
-                        <button id="reset-stats">Reiniciar Estadísticas</button>
-                    </div>
-                    
-                    <div id="tracking-status" class="status">Presiona "Iniciar Seguimiento" para comenzar</div>
-                </div>
-                
-                <div class="stats-container">
-                    <h2>Estadísticas de Mirada</h2>
-                    
-                    <div class="stat-box">
-                        <span>Tiempo total de seguimiento:</span>
-                        <span id="total-time" class="stat-value">00:00:00</span>
-                    </div>
-                    
-                    <div class="stat-box">
-                        <span>Tiempo mirando a la cámara:</span>
-                        <span id="looking-time" class="stat-value">00:00:00</span>
-                    </div>
-                    
-                    <div class="stat-box">
-                        <span>Tiempo evitando la mirada:</span>
-                        <span id="avoiding-time" class="stat-value">00:00:00</span>
-                    </div>
-                    
-                    <h3>Porcentaje de tiempo mirando a la cámara</h3>
-                    <div class="progress-container">
-                        <div id="looking-progress" class="progress-bar looking-bar" style="width: 0%"></div>
-                    </div>
-                    <div id="looking-percentage" class="center">0%</div>
-                    
-                    <h3>Porcentaje de tiempo evitando la mirada</h3>
-                    <div class="progress-container">
-                        <div id="avoiding-progress" class="progress-bar avoiding-bar" style="width: 0%"></div>
-                    </div>
-                    <div id="avoiding-percentage" class="center">0%</div>
-                    
-                    <div id="current-state" class="status center">Estado: No detectado</div>
-                    
-                    <div class="chart-container">
-                        <canvas id="gaze-chart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div id="speech" class="tab-content" style="display: none;">
-            <div class="audio-container">
-                <h2>Análisis de Voz y Muletillas</h2>
-                
+<div class="container">
+
+    <!-- ============================================================
+         ENCABEZADO
+    ============================================================ -->
+    <div class="header">
+        <h1>Sistema de Análisis de Presentación</h1>
+    </div>
+
+    <!-- ============================================================
+         INSTRUCCIONES DE CONFIGURACIÓN
+    ============================================================ -->
+    <div id="setup-instructions">
+        <h3>Instrucciones de Configuración</h3>
+        <ol>
+            <li>
+                <strong>Ejecutar desde servidor local:</strong>
+                Para evitar problemas con Chrome, este sistema debe ejecutarse desde un servidor web.
+            </li>
+            <li>
+                <strong>Permitir cámara y micrófono:</strong>
+                Cuando el navegador lo solicite, asegúrate de permitir el acceso a la cámara y al micrófono.
+            </li>
+            <li>
+                <strong>Carga de modelos:</strong>
+                El sistema necesita descargar los modelos de reconocimiento facial (~6 MB).
+                Espera a que termine la carga antes de usar.
+            </li>
+        </ol>
+        <button id="hide-instructions">Entendido, ocultar instrucciones</button>
+    </div>
+
+    <!-- ============================================================
+         BARRA DE CARGA DE MODELOS
+    ============================================================ -->
+    <div id="loading-models" class="center">
+        <div class="loading-spinner"></div>
+        <span>Cargando modelos de reconocimiento facial... (0%)</span>
+    </div>
+
+    <!-- ============================================================
+         NAVEGACIÓN POR PESTAÑAS
+         data-tab debe coincidir con el id del contenido correspondiente
+    ============================================================ -->
+    <div class="tabs">
+        <button class="tab active" data-tab="gaze">Seguimiento de Mirada</button>
+        <button class="tab"        data-tab="speech">Análisis de Voz</button>
+        <button class="tab"        data-tab="combined">Análisis Combinado</button>
+    </div>
+
+    <!-- ============================================================
+         PESTAÑA 1 – SEGUIMIENTO DE MIRADA
+    ============================================================ -->
+    <div id="gaze" class="tab-content">
+        <div class="main-content">
+
+            <!-- Cámara -->
+            <div class="camera-container">
+                <video id="video" autoplay muted playsinline></video>
+                <canvas id="overlay-canvas"></canvas>
+
                 <div class="controls">
-                    <button id="start-speech">Iniciar Análisis de Voz</button>
-                    <button id="stop-speech" disabled>Detener Análisis</button>
-                    <button id="reset-speech">Reiniciar Análisis</button>
+                    <button id="start-tracking">Iniciar Seguimiento</button>
+                    <button id="stop-tracking" disabled>Detener Seguimiento</button>
+                    <button id="reset-stats">Reiniciar Estadísticas</button>
                 </div>
-                
-                <div id="speech-status" class="status">Presiona "Iniciar Análisis de Voz" para comenzar</div>
-                
+
+                <div id="tracking-status" class="status">
+                    Presiona "Iniciar Seguimiento" para comenzar
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            <div class="stats-container">
+                <h2>Estadísticas de Mirada</h2>
+
                 <div class="stat-box">
-                    <span>Tiempo de grabación:</span>
-                    <span id="recording-time" class="stat-value">00:00:00</span>
+                    <span>Tiempo total de seguimiento:</span>
+                    <span id="total-time" class="stat-value">00:00:00</span>
                 </div>
-                
                 <div class="stat-box">
-                    <span>Total de palabras:</span>
-                    <span id="total-words" class="stat-value">0</span>
+                    <span>Tiempo mirando a la cámara:</span>
+                    <span id="looking-time" class="stat-value">00:00:00</span>
                 </div>
-                
                 <div class="stat-box">
-                    <span>Muletillas detectadas:</span>
-                    <span id="filler-count" class="stat-value">0</span>
+                    <span>Tiempo evitando la mirada:</span>
+                    <span id="avoiding-time" class="stat-value">00:00:00</span>
                 </div>
-                
-                <div class="stat-box">
-                    <span>Muletillas por minuto:</span>
-                    <span id="filler-rate" class="stat-value">0</span>
+
+                <h3>Porcentaje de tiempo mirando a la cámara</h3>
+                <div class="progress-container">
+                    <div id="looking-progress" class="progress-bar looking-bar" style="width:0%"></div>
                 </div>
-                
-                <div id="filler-category" class="status center">Categoría: No hay datos suficientes</div>
-                
-                <div class="filler-stats">
-                    <div class="filler-stat-box low-filler">
-                        <h4>Bajo</h4>
-                        <p>1-3 por minuto</p>
-                    </div>
-                    <div class="filler-stat-box moderate-filler">
-                        <h4>Moderado</h4>
-                        <p>4-8 por minuto</p>
-                    </div>
-                    <div class="filler-stat-box high-filler">
-                        <h4>Alto</h4>
-                        <p>9-15 por minuto</p>
-                    </div>
-                    <div class="filler-stat-box extreme-filler">
-                        <h4>Extremo</h4>
-                        <p>16+ por minuto</p>
-                    </div>
+                <div id="looking-percentage" class="center">0%</div>
+
+                <h3>Porcentaje de tiempo evitando la mirada</h3>
+                <div class="progress-container">
+                    <div id="avoiding-progress" class="progress-bar avoiding-bar" style="width:0%"></div>
                 </div>
-                
-                <h3>Transcripción en tiempo real</h3>
-                <div id="transcript-container" class="transcript-container">
-                    <p>La transcripción aparecerá aquí cuando comience a hablar...</p>
-                </div>
-                
-                <h3>Muletillas más frecuentes</h3>
+                <div id="avoiding-percentage" class="center">0%</div>
+
+                <div id="current-state" class="status center">Estado: No detectado</div>
+
                 <div class="chart-container">
-                    <canvas id="filler-chart"></canvas>
+                    <canvas id="gaze-chart"></canvas>
                 </div>
             </div>
-        </div>
-        
-        <div id="combined" class="tab-content" style="display: none;">
-            <div class="main-content">
-                <div class="camera-container">
-                    <video id="combined-video" autoplay playsinline></video>
-                    <canvas id="combined-canvas"></canvas>
-                    
-                    <div class="controls">
-                        <button id="start-combined">Iniciar Análisis Completo</button>
-                        <button id="stop-combined" disabled>Detener Análisis</button>
-                        <button id="reset-combined">Reiniciar Análisis</button>
-                    </div>
-                    
-                    <div id="combined-status" class="status">Presiona "Iniciar Análisis Completo" para comenzar</div>
-                </div>
-                
-                <div class="stats-container">
-                    <h2>Análisis Combinado</h2>
-                    
-                    <div class="stat-box">
-                        <span>Tiempo total:</span>
-                        <span id="combined-time" class="stat-value">00:00:00</span>
-                    </div>
-                    
-                    <div class="stat-box">
-                        <span>Contacto visual:</span>
-                        <span id="combined-looking" class="stat-value">0%</span>
-                    </div>
-                    
-                    <div class="stat-box">
-                        <span>Muletillas por minuto:</span>
-                        <span id="combined-filler-rate" class="stat-value">0</span>
-                    </div>
-                    
-                    <div id="combined-evaluation" class="status center">Evaluación: No hay datos suficientes</div>
-                    
-                    <h3>Transcripción en tiempo real</h3>
-                    <div id="combined-transcript" class="transcript-container">
-                        <p>La transcripción aparecerá aquí cuando comience a hablar...</p>
-                    </div>
-                    
-                    <div class="chart-container">
-                        <canvas id="combined-chart"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div id="server-instructions" style="margin-top: 30px; padding: 15px; background-color: #f0f0f0; border-radius: 5px;">
-            <h3>Cómo ejecutar en un servidor local</h3>
-            <p>Para ejecutar este sistema correctamente en Google Chrome, necesitas usar un servidor web local. Hay varias opciones:</p>
-            
-            <h4>Opción 1: Usando Python (más fácil)</h4>
-            <ol>
-                <li>Guarda este archivo HTML como <code>index.html</code></li>
-                <li>Abre una terminal o línea de comandos</li>
-                <li>Navega a la carpeta donde guardaste el archivo</li>
-                <li>Ejecuta uno de estos comandos (según la versión de Python que tengas instalada):
-                    <ul>
-                        <li>Python 3: <code>python -m http.server</code></li>
-                        <li>Python 2: <code>python -m SimpleHTTPServer</code></li>
-                    </ul>
-                </li>
-                <li>Abre Chrome y ve a <a href="http://localhost:8000">http://localhost:8000</a></li>
-            </ol>
-            
-            <h4>Opción 2: Usando Visual Studio Code</h4>
-            <ol>
-                <li>Instala la extensión "Live Server"</li>
-                <li>Abre el archivo en VS Code</li>
-                <li>Haz clic en "Go Live" en la barra de estado (esquina inferior derecha)</li>
-            </ol>
-            
-            <h4>Opción 3: Usar aplicaciones de servidor local</h4>
-            <ul>
-                <li>XAMPP, WAMP, MAMP (según tu sistema operativo)</li>
-                <li>Coloca el archivo en la carpeta pública del servidor (generalmente "htdocs" o "www")</li>
-            </ul>
+
         </div>
     </div>
 
-    <!-- Agregar Chart.js para gráficos -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- ============================================================
+         PESTAÑA 2 – ANÁLISIS DE VOZ
+    ============================================================ -->
+    <div id="speech" class="tab-content" style="display:none;">
+        <div class="audio-container">
+            <h2>Análisis de Voz y Muletillas</h2>
 
-    <script>
-        // Variables globales
-        let videoStream = null;
-        let audioStream = null;
-        let combinedStream = null;
-        let modelsLoaded = false;
-        let isTrackingRunning = false;
-        let isSpeechRunning = false;
-        let isCombinedRunning = false;
-        let faceDetectionInterval = null;
-        let modelsLoadingProgress = 0;
-        let totalModelsToLoad = 3;
-        
-        // Variables para reconocimiento de voz
-        let recognition = null;
-        let speechRecognitionSupported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
-        
-        // Lista de muletillas comunes en español
-        const fillerWords = [
-            "este", "eh", "em", "am", "mmm", "um", "ah", "o sea", "digamos", 
-            "como que", "pues", "bueno", "entonces", "¿no?", "¿verdad?", 
-            "¿cierto?", "¿me entiendes?", "¿sabes?", "¿ok?", "¿vale?", 
-            "mira", "fíjate", "escucha", "básicamente", "literalmente", 
-            "prácticamente", "realmente", "sinceramente", "honestamente", 
-            "francamente", "en realidad", "de hecho", "por así decirlo"
-        ];
-        
-        // Variables para el seguimiento de mirada
-        let gazeTracker = {
-            totalTime: 0,
-            lookingTime: 0,
-            avoidingTime: 0,
-            isLooking: false,
-            lastUpdateTime: null,
-            historyData: {
-                timestamps: [],
-                lookingPercentages: []
-            },
-            
-            // Reiniciar estadísticas
-            reset: function() {
-                this.totalTime = 0;
-                this.lookingTime = 0;
-                this.avoidingTime = 0;
-                this.isLooking = false;
-                this.lastUpdateTime = null;
-                this.historyData = {
-                    timestamps: [],
-                    lookingPercentages: []
-                };
-                this.updateUI();
-            },
-            
-            // Actualizar tiempos basado en el estado actual
-            update: function(isLooking, timestamp) {
-                const currentTime = timestamp || Date.now();
-                
-                // Si es la primera actualización, solo guardar el estado
-                if (this.lastUpdateTime === null) {
-                    this.lastUpdateTime = currentTime;
-                    this.isLooking = isLooking;
-                    return;
-                }
-                
-                // Calcular tiempo transcurrido desde la última actualización
-                const elapsed = (currentTime - this.lastUpdateTime) / 1000; // Convertir a segundos
-                this.totalTime += elapsed;
-                
-                // Actualizar contadores según el estado anterior
-                if (this.isLooking) {
-                    this.lookingTime += elapsed;
-                } else {
-                    this.avoidingTime += elapsed;
-                }
-                
-                // Actualizar estado y timestamp
-                this.isLooking = isLooking;
-                this.lastUpdateTime = currentTime;
-                
-                // Actualizar historial cada 5 segundos
-                if (this.totalTime > 0 && (this.historyData.timestamps.length === 0 || 
-                    currentTime - this.historyData.timestamps[this.historyData.timestamps.length - 1] >= 5000)) {
-                    this.historyData.timestamps.push(currentTime);
-                    this.historyData.lookingPercentages.push(this.getLookingPercentage());
-                    
-                    // Limitar el historial a los últimos 20 puntos
-                    if (this.historyData.timestamps.length > 20) {
-                        this.historyData.timestamps.shift();
-                        this.historyData.lookingPercentages.shift();
-                    }
-                    
-                    // Actualizar gráfico
-                    updateGazeChart();
-                }
-                
-                // Actualizar la interfaz
-                this.updateUI();
-            },
-            
-            // Obtener porcentaje de tiempo mirando
-            getLookingPercentage: function() {
-                return this.totalTime > 0 ? (this.lookingTime / this.totalTime) * 100 : 0;
-            },
-            
-            // Obtener porcentaje de tiempo evitando
-            getAvoidingPercentage: function() {
-                return this.totalTime > 0 ? (this.avoidingTime / this.totalTime) * 100 : 0;
-            },
-            
-            // Formatear tiempo en formato HH:MM:SS
-            formatTime: function(timeInSeconds) {
-                const hours = Math.floor(timeInSeconds / 3600);
-                const minutes = Math.floor((timeInSeconds % 3600) / 60);
-                const seconds = Math.floor(timeInSeconds % 60);
-                
-                return [
-                    hours.toString().padStart(2, '0'),
-                    minutes.toString().padStart(2, '0'),
-                    seconds.toString().padStart(2, '0')
-                ].join(':');
-            },
-            
-            // Actualizar la interfaz de usuario con los datos actuales
-            updateUI: function() {
-                // Actualizar tiempos
-                document.getElementById('total-time').textContent = this.formatTime(this.totalTime);
-                document.getElementById('looking-time').textContent = this.formatTime(this.lookingTime);
-                document.getElementById('avoiding-time').textContent = this.formatTime(this.avoidingTime);
-                
-                // Actualizar porcentajes
-                const lookingPercentage = this.getLookingPercentage();
-                const avoidingPercentage = this.getAvoidingPercentage();
-                
-                document.getElementById('looking-percentage').textContent = `${Math.round(lookingPercentage)}%`;
-                document.getElementById('avoiding-percentage').textContent = `${Math.round(avoidingPercentage)}%`;
-                
-                // Actualizar barras de progreso
-                document.getElementById('looking-progress').style.width = `${lookingPercentage}%`;
-                document.getElementById('avoiding-progress').style.width = `${avoidingPercentage}%`;
-                
-                // Actualizar estado actual
-                const currentState = document.getElementById('current-state');
-                if (this.isLooking) {
-                    currentState.textContent = 'Estado: Mirando a la cámara';
-                    currentState.className = 'status success center';
-                } else {
-                    currentState.textContent = 'Estado: Evitando la mirada';
-                    currentState.className = 'status warning center';
-                }
-                
-                // Actualizar datos combinados si están activos
-                if (isCombinedRunning) {
-                    document.getElementById('combined-time').textContent = this.formatTime(this.totalTime);
-                    document.getElementById('combined-looking').textContent = `${Math.round(lookingPercentage)}%`;
-                    updateCombinedEvaluation();
-                }
-            }
-        };
-        
-        // Variables para el análisis de voz
-        let speechTracker = {
-            startTime: null,
-            totalTime: 0,
-            totalWords: 0,
-            fillerWords: 0,
-            fillerWordsMap: {},
-            transcript: [],
-            
-            // Reiniciar estadísticas
-            reset: function() {
-                this.startTime = null;
-                this.totalTime = 0;
-                this.totalWords = 0;
-                this.fillerWords = 0;
-                this.fillerWordsMap = {};
-                this.transcript = [];
-                this.updateUI();
-                document.getElementById('transcript-container').innerHTML = '<p>La transcripción aparecerá aquí cuando comience a hablar...</p>';
-                document.getElementById('combined-transcript').innerHTML = '<p>La transcripción aparecerá aquí cuando comience a hablar...</p>';
-                updateFillerChart();
-            },
-            
-            // Iniciar seguimiento
-            start: function() {
-                this.startTime = Date.now();
-                this.updateUI();
-            },
-            
-            // Detener seguimiento
-            stop: function() {
-                if (this.startTime) {
-                    this.totalTime = (Date.now() - this.startTime) / 1000;
-                    this.startTime = null;
-                }
-                this.updateUI();
-            },
-            
-            // Actualizar tiempo transcurrido
-            updateTime: function() {
-                if (this.startTime) {
-                    this.totalTime = (Date.now() - this.startTime) / 1000;
-                    this.updateUI();
-                }
-            },
-            
-            // Procesar texto para detectar muletillas
-            processText: function(text) {
-                if (!text) return;
-                
-                // Convertir a minúsculas para mejor comparación
-                const lowerText = text.toLowerCase();
-                
-                // Contar palabras totales (aproximado)
-                const words = lowerText.split(/\s+/).filter(word => word.length > 0);
-                this.totalWords += words.length;
-                
-                // Buscar muletillas
-                for (const fillerWord of fillerWords) {
-                    // Usar expresión regular para encontrar palabras completas
-                    const regex = new RegExp(`\\b${fillerWord}\\b`, 'gi');
-                    const matches = lowerText.match(regex);
-                    
-                    if (matches) {
-                        const count = matches.length;
-                        this.fillerWords += count;
-                        
-                        // Actualizar mapa de muletillas
-                        this.fillerWordsMap[fillerWord] = (this.fillerWordsMap[fillerWord] || 0) + count;
-                    }
-                }
-                
-                // Resaltar muletillas en el texto
-                let highlightedText = text;
-                for (const fillerWord of fillerWords) {
-                    const regex = new RegExp(`\\b${fillerWord}\\b`, 'gi');
-                    highlightedText = highlightedText.replace(regex, `<span class="filler-word">$&</span>`);
-                }
-                
-                // Agregar a la transcripción
-                this.transcript.push(highlightedText);
-                
-                // Actualizar UI
-                this.updateTranscript();
-                this.updateUI();
-                updateFillerChart();
-            },
-            
-            // Actualizar transcripción en la UI
-            updateTranscript: function() {
-                const transcriptContainer = document.getElementById('transcript-container');
-                const combinedTranscript = document.getElementById('combined-transcript');
-                
-                // Limitar a las últimas 10 líneas para mejor rendimiento
-                const recentTranscript = this.transcript.slice(-10);
-                
-                // Crear HTML para la transcripción
-                const transcriptHTML = recentTranscript.map(line => 
-                    `<div class="transcript-line">${line}</div>`
-                ).join('');
-                
-                transcriptContainer.innerHTML = transcriptHTML || '<p>La transcripción aparecerá aquí cuando comience a hablar...</p>';
-                combinedTranscript.innerHTML = transcriptHTML || '<p>La transcripción aparecerá aquí cuando comience a hablar...</p>';
-                
-                // Scroll al final
-                transcriptContainer.scrollTop = transcriptContainer.scrollHeight;
-                combinedTranscript.scrollTop = combinedTranscript.scrollHeight;
-            },
-            
-            // Obtener tasa de muletillas por minuto
-            getFillerRate: function() {
-                const minutes = this.totalTime / 60;
-                return minutes > 0 ? this.fillerWords / minutes : 0;
-            },
-            
-            // Obtener categoría de uso de muletillas
-            getFillerCategory: function() {
-                const rate = this.getFillerRate();
-                
-                if (rate < 1) return { category: 'insuficiente', text: 'Datos insuficientes', class: '' };
-                if (rate <= 3) return { category: 'bajo', text: 'Bajo uso de muletillas', class: 'low-filler' };
-                if (rate <= 8) return { category: 'moderado', text: 'Uso moderado de muletillas', class: 'moderate-filler' };
-					if (rate <= 15) return { category: 'alto', text: 'Alto uso de muletillas', class: 'high-filler' };
-                return { category: 'extremo', text: 'Extremo uso de muletillas', class: 'extreme-filler' };
-            },
-            
-            // Actualizar la interfaz de usuario con los datos actuales
-            updateUI: function() {
-                // Actualizar tiempo
-                document.getElementById('recording-time').textContent = gazeTracker.formatTime(this.totalTime);
-                
-                // Actualizar contadores
-                document.getElementById('total-words').textContent = this.totalWords;
-                document.getElementById('filler-count').textContent = this.fillerWords;
-                
-                // Actualizar tasa de muletillas
-                const fillerRate = this.getFillerRate();
-                document.getElementById('filler-rate').textContent = fillerRate.toFixed(1);
-                
-                // Actualizar categoría
-                const category = this.getFillerCategory();
-                const categoryElement = document.getElementById('filler-category');
-                categoryElement.textContent = `Categoría: ${category.text}`;
-                categoryElement.className = `status center ${category.class}`;
-                
-                // Actualizar datos combinados si están activos
-                if (isCombinedRunning) {
-                    document.getElementById('combined-filler-rate').textContent = fillerRate.toFixed(1);
-                    updateCombinedEvaluation();
-                }
-            }
-        };
-        
-        // Elementos del DOM
-        const video = document.getElementById('video');
-        const combinedVideo = document.getElementById('combined-video');
-        const overlayCanvas = document.getElementById('overlay-canvas');
-        const combinedCanvas = document.getElementById('combined-canvas');
-        const trackingStatus = document.getElementById('tracking-status');
-        const speechStatus = document.getElementById('speech-status');
-        const combinedStatus = document.getElementById('combined-status');
-        const loadingModels = document.getElementById('loading-models');
-        const gazeChart = document.getElementById('gaze-chart');
-        const fillerChart = document.getElementById('filler-chart');
-        const combinedChart = document.getElementById('combined-chart');
+            <div class="controls">
+                <button id="start-speech">Iniciar Análisis de Voz</button>
+                <button id="stop-speech" disabled>Detener Análisis</button>
+                <button id="reset-speech">Reiniciar Análisis</button>
+            </div>
 
-        // Botones
-        const startTrackingBtn = document.getElementById('start-tracking');
-        const stopTrackingBtn = document.getElementById('stop-tracking');
-        const resetStatsBtn = document.getElementById('reset-stats');
-        const startSpeechBtn = document.getElementById('start-speech');
-        const stopSpeechBtn = document.getElementById('stop-speech');
-        const resetSpeechBtn = document.getElementById('reset-speech');
-        const startCombinedBtn = document.getElementById('start-combined');
-        const stopCombinedBtn = document.getElementById('stop-combined');
-        const resetCombinedBtn = document.getElementById('reset-combined');
-        const hideInstructionsBtn = document.getElementById('hide-instructions');
+            <div id="speech-status" class="status">
+                Presiona "Iniciar Análisis de Voz" para comenzar
+            </div>
 
-        // Configuración de gráficos
-        let gazeChartInstance = null;
-        let fillerChartInstance = null;
-        let combinedChartInstance = null;
-        
-        function initGazeChart() {
-            const ctx = gazeChart.getContext('2d');
-            gazeChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: 'Porcentaje mirando a la cámara',
-                        data: [],
-                        borderColor: '#2ecc71',
-                        backgroundColor: 'rgba(46, 204, 113, 0.2)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: 'Porcentaje (%)'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Tiempo'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        function updateGazeChart() {
-            if (!gazeChartInstance) return;
-            
-            // Convertir timestamps a etiquetas de tiempo legibles
-            const labels = gazeTracker.historyData.timestamps.map(timestamp => {
-                const date = new Date(timestamp);
-                return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
-            });
-            
-            gazeChartInstance.data.labels = labels;
-            gazeChartInstance.data.datasets[0].data = gazeTracker.historyData.lookingPercentages;
-            gazeChartInstance.update();
-        }
-        
-        function initFillerChart() {
-            const ctx = fillerChart.getContext('2d');
-            fillerChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: [],
-                    datasets: [{
-                        label: 'Frecuencia de muletillas',
-                        data: [],
-                        backgroundColor: 'rgba(52, 152, 219, 0.7)',
-                        borderColor: 'rgba(52, 152, 219, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Frecuencia'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        function updateFillerChart() {
-            if (!fillerChartInstance) return;
-            
-            // Obtener las 5 muletillas más frecuentes
-            const sortedFillers = Object.entries(speechTracker.fillerWordsMap)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 5);
-            
-            fillerChartInstance.data.labels = sortedFillers.map(item => item[0]);
-            fillerChartInstance.data.datasets[0].data = sortedFillers.map(item => item[1]);
-            fillerChartInstance.update();
-        }
-        
-        function initCombinedChart() {
-            const ctx = combinedChart.getContext('2d');
-            combinedChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [],
-                    datasets: [
-                        {
-                            label: 'Contacto visual (%)',
-                            data: [],
-                            borderColor: '#2ecc71',
-                            backgroundColor: 'rgba(46, 204, 113, 0.2)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            fill: true,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: 'Muletillas por minuto',
-                            data: [],
-                            borderColor: '#e74c3c',
-                            backgroundColor: 'rgba(231, 76, 60, 0.2)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            fill: true,
-                            yAxisID: 'y1'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: 'Contacto visual (%)'
-                            }
-                        },
-                        y1: {
-                            beginAtZero: true,
-                            position: 'right',
-                            grid: {
-                                drawOnChartArea: false
-                            },
-                            title: {
-                                display: true,
-                                text: 'Muletillas/min'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Tiempo'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        function updateCombinedChart() {
-            if (!combinedChartInstance || !isCombinedRunning) return;
-            
-            const currentTime = new Date();
-            const timeLabel = `${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes().toString().padStart(2, '0')}:${currentTime.getSeconds().toString().padStart(2, '0')}`;
-            
-            // Agregar nuevos datos
-            combinedChartInstance.data.labels.push(timeLabel);
-            combinedChartInstance.data.datasets[0].data.push(gazeTracker.getLookingPercentage());
-            combinedChartInstance.data.datasets[1].data.push(speechTracker.getFillerRate());
-            
-            // Limitar a los últimos 20 puntos
-            if (combinedChartInstance.data.labels.length > 20) {
-                combinedChartInstance.data.labels.shift();
-                combinedChartInstance.data.datasets[0].data.shift();
-                combinedChartInstance.data.datasets[1].data.shift();
-            }
-            
-            combinedChartInstance.update();
-        }
-        
-        function updateCombinedEvaluation() {
-            const lookingPercentage = gazeTracker.getLookingPercentage();
-            const fillerRate = speechTracker.getFillerRate();
-            const evaluationElement = document.getElementById('combined-evaluation');
-            
-            // Solo evaluar si hay suficientes datos
-            if (gazeTracker.totalTime < 10 || speechTracker.totalTime < 10) {
-                evaluationElement.textContent = 'Evaluación: No hay datos suficientes';
-                evaluationElement.className = 'status center';
-                return;
-            }
-            
-            // Evaluar contacto visual
-            let eyeContactEval = '';
-            if (lookingPercentage >= 70) {
-                eyeContactEval = 'excelente contacto visual';
-            } else if (lookingPercentage >= 50) {
-                eyeContactEval = 'buen contacto visual';
-            } else if (lookingPercentage >= 30) {
-                eyeContactEval = 'contacto visual moderado';
-            } else {
-                eyeContactEval = 'contacto visual insuficiente';
-            }
-            
-            // Evaluar muletillas
-            let fillerEval = '';
-            if (fillerRate <= 3) {
-                fillerEval = 'uso mínimo de muletillas';
-            } else if (fillerRate <= 8) {
-                fillerEval = 'uso moderado de muletillas';
-            } else if (fillerRate <= 15) {
-                fillerEval = 'uso elevado de muletillas';
-            } else {
-                fillerEval = 'uso excesivo de muletillas';
-            }
-            
-            // Evaluación general
-            let overallClass = '';
-            if (lookingPercentage >= 60 && fillerRate <= 5) {
-                evaluationElement.textContent = `Evaluación: Excelente presentación (${eyeContactEval}, ${fillerEval})`;
-                overallClass = 'success';
-            } else if (lookingPercentage >= 40 && fillerRate <= 10) {
-                evaluationElement.textContent = `Evaluación: Buena presentación (${eyeContactEval}, ${fillerEval})`;
-                overallClass = 'success';
-            } else if (lookingPercentage >= 30 && fillerRate <= 15) {
-                evaluationElement.textContent = `Evaluación: Presentación aceptable (${eyeContactEval}, ${fillerEval})`;
-                overallClass = 'warning';
-            } else {
-                evaluationElement.textContent = `Evaluación: Necesita mejorar (${eyeContactEval}, ${fillerEval})`;
-                overallClass = 'error';
-            }
-            
-            evaluationElement.className = `status center ${overallClass}`;
-        }
+            <div class="stat-box">
+                <span>Tiempo de grabación:</span>
+                <span id="recording-time" class="stat-value">00:00:00</span>
+            </div>
+            <div class="stat-box">
+                <span>Total de palabras:</span>
+                <span id="total-words" class="stat-value">0</span>
+            </div>
+            <div class="stat-box">
+                <span>Muletillas detectadas:</span>
+                <span id="filler-count" class="stat-value">0</span>
+            </div>
+            <div class="stat-box">
+                <span>Muletillas por minuto:</span>
+                <span id="filler-rate" class="stat-value">0</span>
+            </div>
 
-        // Ocultar instrucciones
-        hideInstructionsBtn.addEventListener('click', function() {
-            document.getElementById('setup-instructions').style.display = 'none';
-        });
+            <div id="filler-category" class="status center">
+                Categoría: No hay datos suficientes
+            </div>
 
-        // Cambiar entre pestañas
-        function showTab(tabId) {
-            // Ocultar todas las pestañas
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.style.display = 'none';
-            });
-            
-            // Mostrar la pestaña seleccionada
-            document.getElementById(tabId).style.display = 'block';
-            
-            // Actualizar clases de los botones de pestañas
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // Activar el botón de la pestaña actual
-            document.querySelectorAll('.tab').forEach(tab => {
-                if (tab.textContent.toLowerCase().includes(tabId)) {
-                    tab.classList.add('active');
-                }
-            });
-        }
+            <!-- Leyenda de categorías -->
+            <div class="filler-stats">
+                <div class="filler-stat-box low-filler">
+                    <h4>Bajo</h4><p>1-3 por minuto</p>
+                </div>
+                <div class="filler-stat-box moderate-filler">
+                    <h4>Moderado</h4><p>4-8 por minuto</p>
+                </div>
+                <div class="filler-stat-box high-filler">
+                    <h4>Alto</h4><p>9-15 por minuto</p>
+                </div>
+                <div class="filler-stat-box extreme-filler">
+                    <h4>Extremo</h4><p>16+ por minuto</p>
+                </div>
+            </div>
 
-        // Inicialización
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                // Cargar modelos face-api.js con manejo de progreso
-                await loadFaceApiModels();
-                
-                // Ocultar la barra de carga
-                loadingModels.style.display = 'none';
-                
-                // Mostrar notificación de éxito
-                showNotification('Modelos de reconocimiento facial cargados correctamente', 'success');
-                
-                // Inicializar gráficos
-                initGazeChart();
-                initFillerChart();
-                initCombinedChart();
-                
-                // Verificar soporte para reconocimiento de voz
-                if (!speechRecognitionSupported) {
-                    speechStatus.textContent = 'Tu navegador no soporta reconocimiento de voz. Recomendamos usar Chrome.';
-                    speechStatus.className = 'status error';
-                    startSpeechBtn.disabled = true;
-                    
-                    combinedStatus.textContent = 'Tu navegador no soporta reconocimiento de voz. Recomendamos usar Chrome.';
-                    combinedStatus.className = 'status error';
-                    startCombinedBtn.disabled = true;
-                }
-                
-                modelsLoaded = true;
-            } catch (error) {
-                console.error('Error al cargar modelos:', error);
-                loadingModels.innerHTML = `
-                    <div class="status error">
-                        <strong>Error al cargar los modelos de reconocimiento facial</strong>
-                        <p>${error.message || 'Verifica tu conexión y si estás usando un servidor local'}</p>
-                        <button onclick="location.reload()">Reintentar</button>
-                    </div>
-                `;
-            }
-        });
+            <h3>Transcripción en tiempo real</h3>
+            <div id="transcript-container" class="transcript-container">
+                <p>La transcripción aparecerá aquí cuando comience a hablar...</p>
+            </div>
 
-        // Función para mostrar notificaciones
-        function showNotification(message, type = '') {
-            const notification = document.createElement('div');
-            notification.className = `status ${type}`;
-            notification.textContent = message;
-            notification.style.position = 'fixed';
-            notification.style.bottom = '20px';
-            notification.style.right = '20px';
-            notification.style.zIndex = '9999';
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                notification.style.transition = 'opacity 0.5s';
-                setTimeout(() => document.body.removeChild(notification), 500);
-            }, 3000);
-        }
+            <h3>Muletillas más frecuentes</h3>
+            <div class="chart-container">
+                <canvas id="filler-chart"></canvas>
+            </div>
+        </div>
+    </div>
 
-        // Cargar modelos de face-api.js con manejo de progreso
-        async function loadFaceApiModels() {
-            // Usar un CDN público con CORS habilitado
-            const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
-            
-            modelsLoadingProgress = 0;
-            updateLoadingProgress();
-            
-            // Cargar los modelos uno por uno para mostrar progreso
-            await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL).then(() => {
-                modelsLoadingProgress++;
-                updateLoadingProgress();
-            });
-            
-            await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL).then(() => {
-                modelsLoadingProgress++;
-                updateLoadingProgress();
-            });
-            
-            await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL).then(() => {
-                modelsLoadingProgress++;
-                updateLoadingProgress();
-            });
-        }
-        
-        function updateLoadingProgress() {
-            const percentage = Math.round((modelsLoadingProgress / totalModelsToLoad) * 100);
-            loadingModels.querySelector('span').textContent = `Cargando modelos de reconocimiento facial... (${percentage}%)`;
-        }
+    <!-- ============================================================
+         PESTAÑA 3 – ANÁLISIS COMBINADO
+    ============================================================ -->
+    <div id="combined" class="tab-content" style="display:none;">
+        <div class="main-content">
 
-        // ========== SEGUIMIENTO DE MIRADA ==========
-        startTrackingBtn.addEventListener('click', startTracking);
-        stopTrackingBtn.addEventListener('click', stopTracking);
-        resetStatsBtn.addEventListener('click', resetGazeStats);
+            <!-- Cámara combinada -->
+            <div class="camera-container">
+                <video id="combined-video" autoplay playsinline></video>
+                <canvas id="combined-canvas"></canvas>
 
-        async function startTracking() {
-            if (!modelsLoaded) {
-                trackingStatus.textContent = 'Los modelos de reconocimiento facial aún no han cargado. Por favor, espere.';
-                trackingStatus.className = 'status error';
-                return;
-            }
-            
-            try {
-                // Configuración optimizada para la cámara
-                const constraints = { 
-                    video: { 
-                        facingMode: 'user',
-                        width: { ideal: 640 },
-                        height: { ideal: 480 }
-                    } 
-                };
-                
-                videoStream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = videoStream;
-                
-                // Ajustar el canvas superpuesto al tamaño del video
-                video.onloadedmetadata = () => {
-                    const displayWidth = video.clientWidth;
-                    const displayHeight = video.videoHeight / (video.videoWidth / displayWidth);
-                    
-                    overlayCanvas.width = displayWidth;
-                    overlayCanvas.height = displayHeight;
-                    
-                    // Iniciar detección facial cuando el video esté listo
-                    startFaceDetection(video, overlayCanvas);
-                };
-                
-                startTrackingBtn.disabled = true;
-                stopTrackingBtn.disabled = false;
-                trackingStatus.textContent = 'Seguimiento iniciado. Analizando dirección de mirada...';
-                trackingStatus.className = 'status';
-                
-                // Inicializar el tiempo de inicio del seguimiento
-                gazeTracker.lastUpdateTime = Date.now();
-                isTrackingRunning = true;
-            } catch (error) {
-                console.error('Error al acceder a la cámara:', error);
-                trackingStatus.textContent = `Error al acceder a la cámara: ${error.message}. Por favor, conceda permisos de cámara.`;
-                trackingStatus.className = 'status error';
-            }
-        }
+                <div class="controls">
+                    <button id="start-combined">Iniciar Análisis Completo</button>
+                    <button id="stop-combined" disabled>Detener Análisis</button>
+                    <button id="reset-combined">Reiniciar Análisis</button>
+                </div>
 
-        function stopTracking() {
-            if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
-                videoStream = null;
-                video.srcObject = null;
-                
-                // Detener la detección facial
-                isTrackingRunning = false;
-                
-                if (faceDetectionInterval) {
-                    clearInterval(faceDetectionInterval);
-                    faceDetectionInterval = null;
-                }
-                
-                // Limpiar el canvas
-                const ctx = overlayCanvas.getContext('2d');
-                ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-                
-                startTrackingBtn.disabled = false;
-                stopTrackingBtn.disabled = true;
-                trackingStatus.textContent = 'Seguimiento detenido.';
-                trackingStatus.className = 'status';
-                
-                // Actualizar una última vez para asegurar que los tiempos sean correctos
-                gazeTracker.update(gazeTracker.isLooking);
-                gazeTracker.lastUpdateTime = null;
-            }
-        }
-        
-        function resetGazeStats() {
-            gazeTracker.reset();
-            updateGazeChart();
-            trackingStatus.textContent = 'Estadísticas reiniciadas.';
-            trackingStatus.className = 'status';
-        }
+                <div id="combined-status" class="status">
+                    Presiona "Iniciar Análisis Completo" para comenzar
+                </div>
+            </div>
 
-        // ========== ANÁLISIS DE VOZ ==========
-        startSpeechBtn.addEventListener('click', startSpeechRecognition);
-        stopSpeechBtn.addEventListener('click', stopSpeechRecognition);
-        resetSpeechBtn.addEventListener('click', resetSpeechStats);
-        
-        function initSpeechRecognition() {
-            // Crear instancia de reconocimiento de voz
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognition = new SpeechRecognition();
-            
-            // Configurar reconocimiento
-            recognition.lang = 'es-ES';
-            recognition.continuous = true;
-            recognition.interimResults = true;
-            
-            // Manejar resultados
-            recognition.onresult = (event) => {
-                const last = event.results.length - 1;
-                const transcript = event.results[last][0].transcript;
-                
-                // Procesar solo si es un resultado final o tiene suficiente confianza
-                if (event.results[last].isFinal || event.results[last][0].confidence > 0.7) {
-                    speechTracker.processText(transcript);
-                }
-            };
-            
-            // Manejar errores
-            recognition.onerror = (event) => {
-                console.error('Error en reconocimiento de voz:', event.error);
-                speechStatus.textContent = `Error en reconocimiento de voz: ${event.error}`;
-                speechStatus.className = 'status error';
-            };
-            
-            // Reiniciar automáticamente si se detiene
-            recognition.onend = () => {
-                if (isSpeechRunning) {
-                    recognition.start();
-                }
-            };
-        }
-        
-        async function startSpeechRecognition() {
-            if (!speechRecognitionSupported) {
-                speechStatus.textContent = 'Tu navegador no soporta reconocimiento de voz. Recomendamos usar Chrome.';
-                speechStatus.className = 'status error';
-                return;
-            }
-            
-            try {
-                // Inicializar reconocimiento si no existe
-                if (!recognition) {
-                    initSpeechRecognition();
-                }
-                
-                // Iniciar reconocimiento
-                recognition.start();
-                isSpeechRunning = true;
-                
-                // Iniciar seguimiento de tiempo
-                speechTracker.start();
-                
-                // Actualizar UI periódicamente
-                speechUpdateInterval = setInterval(() => {
-                    speechTracker.updateTime();
-                }, 1000);
-                
-                startSpeechBtn.disabled = true;
-                stopSpeechBtn.disabled = false;
-                speechStatus.textContent = 'Análisis de voz iniciado. Comience a hablar...';
-                speechStatus.className = 'status success';
-            } catch (error) {
-                console.error('Error al iniciar reconocimiento de voz:', error);
-                speechStatus.textContent = `Error al iniciar reconocimiento de voz: ${error.message}`;
-                speechStatus.className = 'status error';
-            }
-        }
-        
-        function stopSpeechRecognition() {
-            if (recognition) {
-                recognition.stop();
-                isSpeechRunning = false;
-                
-                // Detener actualización de tiempo
-                clearInterval(speechUpdateInterval);
-                
-                // Actualizar tiempo final
-                speechTracker.stop();
-                
-                startSpeechBtn.disabled = false;
-                stopSpeechBtn.disabled = true;
-                speechStatus.textContent = 'Análisis de voz detenido.';
-                speechStatus.className = 'status';
-            }
-        }
-        
-        function resetSpeechStats() {
-            speechTracker.reset();
-            speechStatus.textContent = 'Estadísticas reiniciadas.';
-            speechStatus.className = 'status';
-        }
-        
-        // ========== ANÁLISIS COMBINADO ==========
-        startCombinedBtn.addEventListener('click', startCombinedAnalysis);
-        stopCombinedBtn.addEventListener('click', stopCombinedAnalysis);
-        resetCombinedBtn.addEventListener('click', resetCombinedStats);
-        
-        async function startCombinedAnalysis() {
-            if (!modelsLoaded) {
-                combinedStatus.textContent = 'Los modelos de reconocimiento facial aún no han cargado. Por favor, espere.';
-                combinedStatus.className = 'status error';
-                return;
-            }
-            
-            if (!speechRecognitionSupported) {
-                combinedStatus.textContent = 'Tu navegador no soporta reconocimiento de voz. Recomendamos usar Chrome.';
-                combinedStatus.className = 'status error';
-                return;
-            }
-            
-            try {
-                // Solicitar permisos para cámara y micrófono juntos
-                const constraints = { 
-                    audio: true,
-                    video: { 
-                        facingMode: 'user',
-                        width: { ideal: 640 },
-                        height: { ideal: 480 }
-                    } 
-                };
-                
-                combinedStream = await navigator.mediaDevices.getUserMedia(constraints);
-                
-                // Configurar video
-                combinedVideo.srcObject = combinedStream;
-                combinedVideo.muted = true; // Evitar retroalimentación
-                
-                // Ajustar el canvas superpuesto al tamaño del video
-                combinedVideo.onloadedmetadata = () => {
-                    const displayWidth = combinedVideo.clientWidth;
-                    const displayHeight = combinedVideo.videoHeight / (combinedVideo.videoWidth / displayWidth);
-                    
-                    combinedCanvas.width = displayWidth;
-                    combinedCanvas.height = displayHeight;
-                    
-                    // Iniciar detección facial cuando el video esté listo
-                    startFaceDetection(combinedVideo, combinedCanvas);
-                };
-                
-                // Inicializar reconocimiento si no existe
-                if (!recognition) {
-                    initSpeechRecognition();
-                }
-                
-                // Iniciar reconocimiento
-                recognition.start();
-                
-                // Iniciar seguimiento
-                gazeTracker.reset();
-                gazeTracker.lastUpdateTime = Date.now();
-                speechTracker.reset();
-                speechTracker.start();
-                
-                // Actualizar UI periódicamente
-                combinedUpdateInterval = setInterval(() => {
-                    speechTracker.updateTime();
-                    updateCombinedChart();
-                }, 1000);
-                
-                startCombinedBtn.disabled = true;
-                stopCombinedBtn.disabled = false;
-                combinedStatus.textContent = 'Análisis combinado iniciado. Comience su presentación...';
-                combinedStatus.className = 'status success';
-                
-                isCombinedRunning = true;
-            } catch (error) {
-                console.error('Error al iniciar análisis combinado:', error);
-                combinedStatus.textContent = `Error al iniciar análisis: ${error.message}. Verifique permisos de cámara y micrófono.`;
-                combinedStatus.className = 'status error';
-            }
-        }
-        
-        function stopCombinedAnalysis() {
-            if (combinedStream) {
-                // Detener streams
-                combinedStream.getTracks().forEach(track => track.stop());
-                combinedStream = null;
-                combinedVideo.srcObject = null;
-                
-                // Detener reconocimiento de voz
-                if (recognition) {
-                    recognition.stop();
-                }
-                
-                // Detener intervalos
-                clearInterval(combinedUpdateInterval);
-                
-                if (faceDetectionInterval) {
-                    clearInterval(faceDetectionInterval);
-                    faceDetectionInterval = null;
-                }
-                
-                // Limpiar el canvas
-                const ctx = combinedCanvas.getContext('2d');
-                ctx.clearRect(0, 0, combinedCanvas.width, combinedCanvas.height);
-                
-                // Actualizar tiempos finales
-                speechTracker.stop();
-                gazeTracker.update(gazeTracker.isLooking);
-                gazeTracker.lastUpdateTime = null;
-                
-                startCombinedBtn.disabled = false;
-                stopCombinedBtn.disabled = true;
-                combinedStatus.textContent = 'Análisis combinado detenido.';
-                combinedStatus.className = 'status';
-                
-                isCombinedRunning = false;
-            }
-        }
-        
-        function resetCombinedStats() {
-            gazeTracker.reset();
-            speechTracker.reset();
-            combinedStatus.textContent = 'Estadísticas reiniciadas.';
-            combinedStatus.className = 'status';
-            
-            // Reiniciar gráfico combinado
-            if (combinedChartInstance) {
-                combinedChartInstance.data.labels = [];
-                combinedChartInstance.data.datasets[0].data = [];
-                combinedChartInstance.data.datasets[1].data = [];
-                combinedChartInstance.update();
-            }
-        }
+            <!-- Estadísticas combinadas -->
+            <div class="stats-container">
+                <h2>Análisis Combinado</h2>
 
-        function startFaceDetection(videoElement, canvasElement) {
-            // Limpiar intervalo anterior si existe
-            if (faceDetectionInterval) {
-                clearInterval(faceDetectionInterval);
-            }
-            
-            // Establecer un intervalo para la detección facial
-            faceDetectionInterval = setInterval(async () => {
-                if (!videoElement.srcObject) {
-                    clearInterval(faceDetectionInterval);
-                    return;
-                }
-                
-                try {
-                    // Opciones optimizadas para detección facial
-                    const options = new faceapi.SsdMobilenetv1Options({ 
-                        minConfidence: 0.5,
-                        maxResults: 1 
-                    });
-                    
-                    // Detectar rostros en el video con opciones optimizadas
-                    const results = await faceapi.detectAllFaces(videoElement, options)
-                        .withFaceLandmarks();
-                    
-                    // Dibujar detecciones en el canvas
-                    const ctx = canvasElement.getContext('2d');
-                    ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-                    
-                    // Ajustar dimensiones para el dibujo correcto
-                    const displaySize = {
-                        width: canvasElement.width,
-                        height: canvasElement.height
-                    };
-                    
-                    // Redimensionar resultados al tamaño del canvas
-                    const resizedResults = faceapi.resizeResults(results, displaySize);
-                    
-                    if (resizedResults.length > 0) {
-                        // Obtener el primer rostro detectado
-                        const face = resizedResults[0];
-                        
-                        // Dibujar landmarks faciales
-                        faceapi.draw.drawFaceLandmarks(canvasElement, face);
-                        
-                        // Analizar dirección de mirada
-                        const isLookingAtCamera = analyzeGazeDirection(face.landmarks);
-                        
-                        // Actualizar estadísticas de mirada
-                        gazeTracker.update(isLookingAtCamera);
-                        
-                        // Dibujar rectángulo de color según si está mirando o no
-                        const box = face.detection.box;
-                        ctx.strokeStyle = isLookingAtCamera ? '#2ecc71' : '#e74c3c';
-                        ctx.lineWidth = 3;
-                        ctx.strokeRect(box.x, box.y, box.width, box.height);
-                        
-                        // Mostrar estado de mirada
-                        ctx.fillStyle = isLookingAtCamera ? 'rgba(46, 204, 113, 0.7)' : 'rgba(231, 76, 60, 0.7)';
-                        ctx.fillRect(box.x, box.y - 30, box.width, 30);
-                        ctx.fillStyle = '#fff';
-                        ctx.font = '16px Arial';
-                        ctx.fillText(isLookingAtCamera ? 'Mirando' : 'Evitando', box.x + 5, box.y - 10);
-                    } else {
-                        // Si no se detecta rostro, actualizar estado
-                        const currentState = document.getElementById('current-state');
-                        currentState.textContent = 'Estado: No detectado';
-                        currentState.className = 'status center';
-                    }
-                } catch (error) {
-                    console.error('Error en detección facial:', error);
-                }
-            }, 100); // Ejecutar cada 100ms para un buen equilibrio entre rendimiento y precisión
-        }
+                <div class="stat-box">
+                    <span>Tiempo total:</span>
+                    <span id="combined-time" class="stat-value">00:00:00</span>
+                </div>
+                <div class="stat-box">
+                    <span>Contacto visual:</span>
+                    <span id="combined-looking" class="stat-value">0%</span>
+                </div>
+                <div class="stat-box">
+                    <span>Muletillas por minuto:</span>
+                    <span id="combined-filler-rate" class="stat-value">0</span>
+                </div>
 
-        // Analizar dirección de mirada basado en landmarks faciales
-        function analyzeGazeDirection(landmarks) {
-            if (!landmarks) return false;
-            
-            // Obtener puntos de referencia relevantes
-            const leftEye = landmarks.getLeftEye();
-            const rightEye = landmarks.getRightEye();
-            const nose = landmarks.getNose();
-            const jawline = landmarks.getJawOutline();
-            
-            // Calcular centros de los ojos
-            const leftEyeCenter = calculateCenter(leftEye);
-            const rightEyeCenter = calculateCenter(rightEye);
-            
-            // Calcular centro de la nariz (punto de referencia)
-            const noseCenter = calculateCenter(nose);
-            
-            // Calcular distancia entre los ojos
-            const eyesDistance = Math.sqrt(
-                Math.pow(rightEyeCenter.x - leftEyeCenter.x, 2) + 
-                Math.pow(rightEyeCenter.y - leftEyeCenter.y, 2)
-            );
-            
-            // Calcular simetría horizontal de los ojos
-            // Si los ojos están a la misma altura, es más probable que esté mirando a la cámara
-            const verticalDifference = Math.abs(leftEyeCenter.y - rightEyeCenter.y);
-            const isSymmetrical = verticalDifference < (eyesDistance * 0.1); // Tolerancia del 10%
-            
-            // Calcular dirección vertical de la mirada
-            // Comparar posición vertical de los ojos con respecto a la nariz
-            const verticalGaze = ((leftEyeCenter.y + rightEyeCenter.y) / 2) - noseCenter.y;
-            
-            // Calcular relación de aspecto de los ojos (EAR)
-            // Un valor bajo indica ojos más cerrados
-            const leftEAR = calculateEAR(leftEye);
-            const rightEAR = calculateEAR(rightEye);
-            const averageEAR = (leftEAR + rightEAR) / 2;
-            
-            // Combinamos estos factores para determinar si está mirando a la cámara
-            // Esta es una heurística simple y puede necesitar ajustes
-            const isLookingAtCamera = 
-                isSymmetrical && 
-                verticalGaze < -5 && // Valor negativo significa que los ojos están por encima de la nariz
-                eyesDistance > 30;   // Asegurarse de que la cara esté lo suficientemente cerca
-            
-            return isLookingAtCamera;
-        }
-        
-        // Función auxiliar para calcular el centro de un conjunto de puntos
-        function calculateCenter(points) {
-            let sumX = 0;
-            let sumY = 0;
-            
-            for (let i = 0; i < points.length; i++) {
-                sumX += points[i].x;
-                sumY += points[i].y;
-            }
-            
-            return {
-                x: sumX / points.length,
-                y: sumY / points.length
-            };
-        }
-        
-        // Función para calcular la relación de aspecto del ojo (EAR)
-        function calculateEAR(eye) {
-            // Calcular la distancia vertical entre los puntos superior e inferior del ojo
-            const height1 = Math.sqrt(
-                Math.pow(eye[1].x - eye[5].x, 2) + 
-                Math.pow(eye[1].y - eye[5].y, 2)
-            );
-            
-            const height2 = Math.sqrt(
-                Math.pow(eye[2].x - eye[4].x, 2) + 
-                Math.pow(eye[2].y - eye[4].y, 2)
-            );
-            
-            // Calcular la distancia horizontal entre los puntos extremos del ojo
-            const width = Math.sqrt(
-                Math.pow(eye[0].x - eye[3].x, 2) + 
-                Math.pow(eye[0].y - eye[3].y, 2)
-            );
-            
-            // Calcular EAR
-            return (height1 + height2) / (2 * width);
-        }
-    </script>
+                <div id="combined-evaluation" class="status center">
+                    Evaluación: No hay datos suficientes
+                </div>
+
+                <h3>Transcripción en tiempo real</h3>
+                <div id="combined-transcript" class="transcript-container">
+                    <p>La transcripción aparecerá aquí cuando comience a hablar...</p>
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="combined-chart"></canvas>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================================
+         INSTRUCCIONES DEL SERVIDOR LOCAL
+    ============================================================ -->
+    <div id="server-instructions">
+        <h3>Cómo ejecutar en un servidor local</h3>
+        <p>Para ejecutar este sistema correctamente en Google Chrome necesitas un servidor web local:</p>
+
+        <h4>Opción 1: Python (más fácil)</h4>
+        <ol>
+            <li>Abre una terminal y navega a la carpeta del proyecto.</li>
+            <li>
+                Ejecuta:
+                <ul>
+                    <li>Python 3: <code>python -m http.server</code></li>
+                    <li>Python 2: <code>python -m SimpleHTTPServer</code></li>
+                </ul>
+            </li>
+            <li>Abre Chrome en <code>http://localhost:8000</code></li>
+        </ol>
+
+        <h4>Opción 2: Visual Studio Code</h4>
+        <ol>
+            <li>Instala la extensión <strong>Live Server</strong>.</li>
+            <li>Abre el archivo en VS Code y haz clic en <strong>Go Live</strong>.</li>
+        </ol>
+
+        <h4>Opción 3: XAMPP / WAMP / MAMP</h4>
+        <ul>
+            <li>Coloca la carpeta del proyecto en <code>htdocs</code> o <code>www</code>.</li>
+        </ul>
+    </div>
+
+</div><!-- /.container -->
+
+<!-- Punto de entrada de la aplicación (ES Module) -->
+<script type="module" src="js/app.js"></script>
 </body>
 </html>
-                    
