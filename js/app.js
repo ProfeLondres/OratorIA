@@ -26,7 +26,10 @@ import { startCombinedAnalysis, stopCombinedAnalysis,
 import { showTab, showNotification,
          updateLoadingProgress }                     from './ui.js';
 
-import { formatTime } from './utils.js';
+import { formatTime }                                from './utils.js';
+
+import { showProfileModal, updateStudentBar }        from './studentProfile.js';
+import { initHistory, renderHistory }                from './history.js';
 
 // ---- Estado de la aplicación ------------------------------------------
 let modelsLoaded = false;
@@ -37,10 +40,8 @@ const speechRecognitionSupported =
 window.showTab = showTab;
 
 // ---- Callbacks de los trackers ----------------------------------------
-// gazeTracker notifica cuando su historial cambia → actualizar gráfica
 gazeTracker.onHistoryUpdate = () => updateGazeChart(gazeTracker.historyData);
 
-// gazeTracker notifica cada actualización de UI → sincronizar panel combinado
 gazeTracker.onCombinedUpdate = () => {
     if (!isCombinedRunning()) return;
     document.getElementById('combined-time').textContent    = formatTime(gazeTracker.totalTime);
@@ -49,10 +50,8 @@ gazeTracker.onCombinedUpdate = () => {
     updateCombinedEvaluation();
 };
 
-// speechTracker notifica cambios en muletillas → actualizar gráfica de barras
 speechTracker.onFillerChartUpdate = () => updateFillerChart(speechTracker.fillerWordsMap);
 
-// speechTracker notifica cada actualización de UI → sincronizar panel combinado
 speechTracker.onCombinedUpdate = () => {
     if (!isCombinedRunning()) return;
     document.getElementById('combined-filler-rate').textContent =
@@ -64,28 +63,43 @@ speechTracker.onCombinedUpdate = () => {
 document.addEventListener('DOMContentLoaded', async () => {
 
     // -- Botones de seguimiento de mirada --
-    document.getElementById('start-tracking')
-        .addEventListener('click', () => startTracking(modelsLoaded));
-    document.getElementById('stop-tracking')
-        .addEventListener('click', stopTracking);
-    document.getElementById('reset-stats')
-        .addEventListener('click', resetGazeStats);
+    document.getElementById('start-tracking').addEventListener('click', () => {
+        showProfileModal(profile => {
+            updateStudentBar(profile);
+            startTracking(modelsLoaded);
+        });
+    });
+    document.getElementById('stop-tracking').addEventListener('click', () => {
+        stopTracking();
+        updateStudentBar(null);
+    });
+    document.getElementById('reset-stats').addEventListener('click', resetGazeStats);
 
     // -- Botones de análisis de voz --
-    document.getElementById('start-speech')
-        .addEventListener('click', () => startSpeechRecognition(speechRecognitionSupported));
-    document.getElementById('stop-speech')
-        .addEventListener('click', stopSpeechRecognition);
-    document.getElementById('reset-speech')
-        .addEventListener('click', resetSpeechStats);
+    document.getElementById('start-speech').addEventListener('click', () => {
+        showProfileModal(profile => {
+            updateStudentBar(profile);
+            startSpeechRecognition(speechRecognitionSupported);
+        });
+    });
+    document.getElementById('stop-speech').addEventListener('click', () => {
+        stopSpeechRecognition();
+        updateStudentBar(null);
+    });
+    document.getElementById('reset-speech').addEventListener('click', resetSpeechStats);
 
     // -- Botones de análisis combinado --
-    document.getElementById('start-combined')
-        .addEventListener('click', () => startCombinedAnalysis(modelsLoaded, speechRecognitionSupported));
-    document.getElementById('stop-combined')
-        .addEventListener('click', stopCombinedAnalysis);
-    document.getElementById('reset-combined')
-        .addEventListener('click', resetCombinedStats);
+    document.getElementById('start-combined').addEventListener('click', () => {
+        showProfileModal(profile => {
+            updateStudentBar(profile);
+            startCombinedAnalysis(modelsLoaded, speechRecognitionSupported);
+        });
+    });
+    document.getElementById('stop-combined').addEventListener('click', () => {
+        stopCombinedAnalysis();
+        updateStudentBar(null);
+    });
+    document.getElementById('reset-combined').addEventListener('click', resetCombinedStats);
 
     // -- Ocultar instrucciones --
     document.getElementById('hide-instructions')
@@ -93,10 +107,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('setup-instructions').style.display = 'none';
         });
 
-    // -- Navegación por pestañas (data-tab en cada botón) --
+    // -- Navegación por pestañas --
     document.querySelectorAll('.tab').forEach(btn => {
-        btn.addEventListener('click', () => showTab(btn.dataset.tab));
+        btn.addEventListener('click', () => {
+            showTab(btn.dataset.tab);
+            // Refrescar historial cuando se abre esa pestaña
+            if (btn.dataset.tab === 'history') {
+                const filter = document.getElementById('history-filter').value;
+                renderHistory(filter);
+            }
+        });
     });
+
+    // -- Inicializar historial --
+    initHistory();
 
     // -- Carga de modelos de reconocimiento facial --
     try {

@@ -7,6 +7,8 @@
 import { gazeTracker }                        from './gazeTracker.js';
 import { startFaceDetection, stopFaceDetection } from './faceDetection.js';
 import { updateGazeChart }                    from './charts.js';
+import { saveSession }                        from './sessionStore.js';
+import { getCurrentProfile }                  from './studentProfile.js';
 
 let videoStream = null;
 
@@ -74,6 +76,31 @@ export function stopTracking() {
 
     gazeTracker.update(gazeTracker.isLooking);
     gazeTracker.lastUpdateTime = null;
+
+    // Guardar sesión si hubo datos suficientes
+    const profile = getCurrentProfile();
+    if (profile && gazeTracker.totalTime >= 5) {
+        saveSession({
+            studentName:    profile.name,
+            grade:          profile.grade,
+            topic:          profile.topic,
+            type:           'gaze',
+            duration:       gazeTracker.totalTime,
+            gazePercentage: gazeTracker.getLookingPercentage(),
+            fillerRate:     null,
+            fillerCount:    null,
+            totalWords:     null,
+            evaluation:     _gazeEvaluation(gazeTracker.getLookingPercentage()),
+        });
+    }
+}
+
+/** Retorna texto de evaluación según porcentaje de contacto visual. */
+function _gazeEvaluation(pct) {
+    if (pct >= 70) return 'Excelente contacto visual';
+    if (pct >= 50) return 'Buen contacto visual';
+    if (pct >= 30) return 'Contacto visual moderado';
+    return 'Contacto visual insuficiente';
 }
 
 /** Reinicia todas las estadísticas de mirada. */

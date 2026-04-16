@@ -11,6 +11,8 @@ import { startFaceDetection, stopFaceDetection } from './faceDetection.js';
 import { initSpeechRecognition, getRecognition } from './speech.js';
 import { updateCombinedChart, resetCombinedChart } from './charts.js';
 import { formatTime }                            from './utils.js';
+import { saveSession }                           from './sessionStore.js';
+import { getCurrentProfile }                     from './studentProfile.js';
 
 let combinedStream        = null;
 let combinedUpdateInterval = null;
@@ -126,6 +128,26 @@ export function stopCombinedAnalysis() {
     combinedStatus.className   = 'status';
 
     _isCombinedRunning = false;
+
+    // Guardar sesión si hubo datos suficientes
+    const profile = getCurrentProfile();
+    const duration = Math.max(gazeTracker.totalTime, speechTracker.totalTime);
+    if (profile && duration >= 5) {
+        const evalEl = document.getElementById('combined-evaluation');
+        const evalText = evalEl ? evalEl.textContent.replace('Evaluación: ', '') : null;
+        saveSession({
+            studentName:    profile.name,
+            grade:          profile.grade,
+            topic:          profile.topic,
+            type:           'combined',
+            duration,
+            gazePercentage: gazeTracker.getLookingPercentage(),
+            fillerRate:     speechTracker.getFillerRate(),
+            fillerCount:    speechTracker.fillerWords,
+            totalWords:     speechTracker.totalWords,
+            evaluation:     evalText,
+        });
+    }
 }
 
 /** Reinicia todas las estadísticas y la gráfica combinada. */

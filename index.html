@@ -54,13 +54,24 @@
     </div>
 
     <!-- ============================================================
+         BARRA DE PERFIL DEL ESTUDIANTE ACTIVO
+    ============================================================ -->
+    <div id="student-bar" style="display:none;">
+        <span class="bar-label">Analizando:</span>
+        <span id="bar-name" class="bar-name"></span>
+        <span id="bar-grade" class="bar-grade"></span>
+        <span id="bar-topic" class="bar-topic"></span>
+    </div>
+
+    <!-- ============================================================
          NAVEGACIÓN POR PESTAÑAS
          data-tab debe coincidir con el id del contenido correspondiente
     ============================================================ -->
     <div class="tabs">
-        <button class="tab active" data-tab="gaze">Seguimiento de Mirada</button>
-        <button class="tab"        data-tab="speech">Análisis de Voz</button>
-        <button class="tab"        data-tab="combined">Análisis Combinado</button>
+        <button class="tab active" data-tab="gaze">👁 Mirada</button>
+        <button class="tab"        data-tab="speech">🎙 Voz</button>
+        <button class="tab"        data-tab="combined">⚡ Análisis Combinado</button>
+        <button class="tab"        data-tab="history">📋 Historial</button>
     </div>
 
     <!-- ============================================================
@@ -241,6 +252,32 @@
                 <div class="chart-container">
                     <canvas id="combined-chart"></canvas>
                 </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ============================================================
+         PESTAÑA 4 – HISTORIAL DE SESIONES
+    ============================================================ -->
+    <div id="history" class="tab-content" style="display:none;">
+        <div class="history-container">
+
+            <div class="history-header">
+                <h2>Historial de Sesiones</h2>
+                <p class="history-desc">Registro de todos los análisis realizados en este dispositivo.</p>
+            </div>
+
+            <div class="history-controls">
+                <input type="text" id="history-filter"
+                       placeholder="🔍 Buscar por nombre de estudiante...">
+                <button id="history-clear" class="btn-danger">Limpiar todo</button>
+            </div>
+
+            <div id="history-summary" class="history-summary"></div>
+
+            <div id="history-list">
+                <!-- Renderizado dinámicamente por history.js -->
             </div>
 
         </div>

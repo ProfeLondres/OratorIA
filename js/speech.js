@@ -4,7 +4,9 @@
  * inicializar → iniciar → detener → reiniciar estadísticas.
  */
 
-import { speechTracker } from './speechTracker.js';
+import { speechTracker }   from './speechTracker.js';
+import { saveSession }     from './sessionStore.js';
+import { getCurrentProfile } from './studentProfile.js';
 
 let recognition        = null;
 let isSpeechRunning    = false;
@@ -99,6 +101,24 @@ export function stopSpeechRecognition() {
     const speechStatus = document.getElementById('speech-status');
     speechStatus.textContent = 'Análisis de voz detenido.';
     speechStatus.className   = 'status';
+
+    // Guardar sesión si hubo datos suficientes
+    const profile = getCurrentProfile();
+    if (profile && speechTracker.totalTime >= 5) {
+        const cat = speechTracker.getFillerCategory();
+        saveSession({
+            studentName:    profile.name,
+            grade:          profile.grade,
+            topic:          profile.topic,
+            type:           'speech',
+            duration:       speechTracker.totalTime,
+            gazePercentage: null,
+            fillerRate:     speechTracker.getFillerRate(),
+            fillerCount:    speechTracker.fillerWords,
+            totalWords:     speechTracker.totalWords,
+            evaluation:     cat.text,
+        });
+    }
 }
 
 /** Reinicia las estadísticas de voz. */
