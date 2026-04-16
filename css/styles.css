@@ -635,7 +635,31 @@ button:disabled {
 .eval-average   { background: #fff3cd; color: #856404; }
 .eval-poor      { background: #f8d7da; color: #721c24; }
 
-/* Botón eliminar fila */
+/* Botones de acción en filas del historial */
+.col-actions {
+    white-space: nowrap;
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.btn-report-session {
+    background: none;
+    border: 1px solid #c5d8f0;
+    color: #3498db;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    margin: 0;
+    transition: all 0.2s;
+}
+
+.btn-report-session:hover {
+    background: #e8f4fd;
+    border-color: #3498db;
+}
+
 .btn-delete-session {
     background: none;
     border: 1px solid #ddd;

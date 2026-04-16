@@ -4,7 +4,8 @@
  */
 
 import { getSessions, deleteSession, clearAllSessions, getSessionsByStudent } from './sessionStore.js';
-import { formatTime } from './utils.js';
+import { formatTime }     from './utils.js';
+import { generateReport } from './report.js';
 
 // ---- API pública -------------------------------------------------------
 
@@ -74,6 +75,15 @@ export function renderHistory(filterName = '') {
         </div>
     `;
 
+    // Botones de reporte
+    container.querySelectorAll('.btn-report-session').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const sessions = getSessions();
+            const session  = sessions.find(s => s.id === Number(btn.dataset.id));
+            if (session) generateReport(session);
+        });
+    });
+
     // Botones de eliminar
     container.querySelectorAll('.btn-delete-session').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -109,7 +119,8 @@ function _buildRow(s, filterName) {
             <td class="col-filler">${filler}</td>
             <td class="col-eval">${evalBadge}</td>
             <td class="col-actions">
-                <button class="btn-delete-session" data-id="${s.id}" title="Eliminar sesión">✕</button>
+                <button class="btn-report-session" data-id="${s.id}" title="Generar reporte PDF">📄</button>
+                <button class="btn-delete-session"  data-id="${s.id}" title="Eliminar sesión">✕</button>
             </td>
         </tr>
     `;

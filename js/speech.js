@@ -130,8 +130,11 @@ export function stopSpeechRecognition() {
     // Guardar sesión si hubo datos suficientes
     const profile = getCurrentProfile();
     if (profile && speechTracker.totalTime >= 5) {
-        const cat   = speechTracker.getFillerCategory();
-        const audio = getAudioStats();
+        const cat        = speechTracker.getFillerCategory();
+        const audio      = getAudioStats();
+        const topFillers = Object.entries(speechTracker.fillerWordsMap)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 6);
         saveSession({
             studentName:     profile.name,
             grade:           profile.grade,
@@ -144,8 +147,10 @@ export function stopSpeechRecognition() {
             totalWords:      speechTracker.totalWords,
             wordsPerMinute:  speechTracker.getWordsPerMinute(),
             avgVolume:       audio.avgVolume,
+            peakVolume:      audio.peakVolume,
             pauseCount:      audio.pauseCount,
             longestPauseSec: audio.longestPauseSec,
+            topFillers,
             evaluation:      cat.text,
         });
     }

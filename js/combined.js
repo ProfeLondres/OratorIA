@@ -152,9 +152,12 @@ export function stopCombinedAnalysis() {
     const profile  = getCurrentProfile();
     const duration = Math.max(gazeTracker.totalTime, speechTracker.totalTime);
     if (profile && duration >= 5) {
-        const evalEl  = document.getElementById('combined-evaluation');
+        const evalEl   = document.getElementById('combined-evaluation');
         const evalText = evalEl ? evalEl.textContent.replace('Evaluación: ', '') : null;
         const audio    = getAudioStats();
+        const topFillers = Object.entries(speechTracker.fillerWordsMap)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 6);
         saveSession({
             studentName:     profile.name,
             grade:           profile.grade,
@@ -167,8 +170,10 @@ export function stopCombinedAnalysis() {
             totalWords:      speechTracker.totalWords,
             wordsPerMinute:  speechTracker.getWordsPerMinute(),
             avgVolume:       audio.avgVolume,
+            peakVolume:      audio.peakVolume,
             pauseCount:      audio.pauseCount,
             longestPauseSec: audio.longestPauseSec,
+            topFillers,
             evaluation:      evalText,
         });
     }
