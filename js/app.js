@@ -30,6 +30,7 @@ import { formatTime }                                from './utils.js';
 
 import { showProfileModal, updateStudentBar }        from './studentProfile.js';
 import { initHistory, renderHistory }                from './history.js';
+import { expressionTracker }                         from './expressionTracker.js';
 
 // ---- Estado de la aplicación ------------------------------------------
 let modelsLoaded = false;
@@ -48,6 +49,11 @@ gazeTracker.onCombinedUpdate = () => {
     document.getElementById('combined-looking').textContent =
         `${Math.round(gazeTracker.getLookingPercentage())}%`;
     updateCombinedEvaluation();
+};
+
+// expressionTracker sincroniza el panel combinado
+expressionTracker.onCombinedUpdate = (expr) => {
+    expressionTracker._updatePanel('combined', expr);
 };
 
 speechTracker.onFillerChartUpdate = () => updateFillerChart(speechTracker.fillerWordsMap);

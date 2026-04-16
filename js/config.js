@@ -17,4 +17,4 @@ export const FILLER_WORDS = [
 export const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
 
 /** Número total de modelos que se deben cargar */
-export const TOTAL_MODELS = 3;
+export const TOTAL_MODELS = 4;

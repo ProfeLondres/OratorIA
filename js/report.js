@@ -6,6 +6,7 @@
  */
 
 import { formatTime } from './utils.js';
+import { EMOTIONS }  from './expressionTracker.js';
 
 // ---- API pública ---------------------------------------------------------
 
@@ -126,6 +127,10 @@ function _recommendations(session) {
         recs.push({ icon: '⏸', text: `${session.pauseCount} pausas largas detectadas: Prepara mejor el contenido para reducir los momentos de bloqueo. Las pausas breves son positivas, pero las largas sugieren falta de ensayo.` });
     }
 
+    if (session.confidenceScore != null && session.confidenceScore < 40) {
+        recs.push({ icon: '💪', text: `Índice de confianza bajo (${session.confidenceScore}%): El análisis facial detectó señales de nerviosismo frecuentes. Practica frente al espejo y con grabaciones para ganar seguridad en tu expresión.` });
+    }
+
     if (recs.length === 0) {
         recs.push({ icon: '⭐', text: '¡Excelente desempeño! Mantén estos niveles y considera practicar en espacios más grandes para proyectar mejor tu voz y lenguaje corporal.' });
     }
@@ -147,9 +152,10 @@ function _buildHTML(s) {
                     : 'Análisis Combinado';
 
     const topFillersHTML = _topFillersHTML(s.topFillers);
-    const gazeSection    = s.gazePercentage != null ? _gazeSectionHTML(s)    : '';
-    const speechSection  = s.fillerRate     != null ? _speechSectionHTML(s)  : '';
-    const audioSection   = s.wordsPerMinute || s.pauseCount ? _audioSectionHTML(s) : '';
+    const gazeSection       = s.gazePercentage    != null ? _gazeSectionHTML(s)       : '';
+    const speechSection     = s.fillerRate        != null ? _speechSectionHTML(s)     : '';
+    const audioSection      = s.wordsPerMinute || s.pauseCount ? _audioSectionHTML(s) : '';
+    const emotionSection    = s.expressionProfile ? _emotionSectionHTML(s)            : '';
 
     return `<!DOCTYPE html>
 <html lang="es">
@@ -364,6 +370,7 @@ function _buildHTML(s) {
   </div>` : ''}
 
   ${gazeSection}
+  ${emotionSection}
   ${speechSection}
   ${topFillersHTML}
   ${audioSection}
@@ -503,6 +510,50 @@ function _audioSectionHTML(s) {
         <div class="prog-fill" style="width:${wpmPct}%;background:${wpmColor}"></div>
       </div>
     </div>
+  </div>`;
+}
+
+function _emotionSectionHTML(s) {
+    const score      = s.confidenceScore ?? 0;
+    const scoreColor = score >= 70 ? '#27ae60' : score >= 45 ? '#f39c12' : '#e74c3c';
+    const dominant   = s.dominantExpression;
+    const meta       = dominant ? (EMOTIONS[dominant] || EMOTIONS.neutral) : null;
+    const profile    = s.expressionProfile || {};
+
+    const sorted = Object.entries(profile).sort((a, b) => b[1] - a[1]);
+
+    const bars = sorted.map(([expr, pct]) => {
+        const em = EMOTIONS[expr] || { emoji: '❓', label: expr, color: '#aaa' };
+        return `
+            <div style="margin:6px 0;">
+                <div style="display:flex;justify-content:space-between;font-size:12px;color:#666;margin-bottom:3px">
+                    <span>${em.emoji} ${em.label}</span>
+                    <span>${pct}%</span>
+                </div>
+                <div style="height:8px;background:#e8e8e8;border-radius:4px;overflow:hidden">
+                    <div style="height:100%;width:${pct}%;background:${em.color};border-radius:4px"></div>
+                </div>
+            </div>`;
+    }).join('');
+
+    return `
+  <div class="section">
+    <div class="section-title">🧠 Análisis Emocional</div>
+    <div class="metrics-grid" style="margin-bottom:16px">
+      <div class="metric-card">
+        <div class="metric-label">Índice de confianza</div>
+        <div class="metric-value" style="color:${scoreColor}">${score}%</div>
+        <div class="metric-sub">Estados positivos</div>
+      </div>
+      ${meta ? `
+      <div class="metric-card">
+        <div class="metric-label">Expresión predominante</div>
+        <div class="metric-value" style="font-size:28px">${meta.emoji}</div>
+        <div class="metric-sub">${meta.label}</div>
+      </div>` : ''}
+    </div>
+    <div style="font-size:12px;font-weight:600;color:#555;margin-bottom:8px">Distribución de expresiones</div>
+    ${bars}
   </div>`;
 }
 

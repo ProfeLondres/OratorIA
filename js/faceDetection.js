@@ -1,19 +1,20 @@
 /**
  * faceDetection.js
- * Carga de modelos de face-api.js, detección facial en tiempo real
- * y análisis de dirección de mirada mediante landmarks.
+ * Carga de modelos de face-api.js, detección facial en tiempo real,
+ * análisis de dirección de mirada y detección de expresiones faciales.
  */
 
 import { MODEL_URL, TOTAL_MODELS } from './config.js';
-import { calculateCenter, calculateEAR } from './utils.js';
-import { gazeTracker } from './gazeTracker.js';
+import { calculateCenter }         from './utils.js';
+import { gazeTracker }             from './gazeTracker.js';
+import { expressionTracker }       from './expressionTracker.js';
 
 let faceDetectionInterval = null;
 
 // ---- Carga de modelos -------------------------------------------------
 
 /**
- * Descarga los tres modelos necesarios de face-api.js.
+ * Descarga los cuatro modelos necesarios de face-api.js.
  * @param {(progress: number, total: number) => void} [onProgress]
  */
 export async function loadFaceApiModels(onProgress) {
@@ -27,19 +28,19 @@ export async function loadFaceApiModels(onProgress) {
     await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL).then(tick);
     await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL).then(tick);
     await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL).then(tick);
+    await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL).then(tick);
 }
 
 // ---- Detección facial en tiempo real ----------------------------------
 
 /**
  * Inicia un bucle de detección facial a 10 FPS sobre un elemento de video.
- * Dibuja los resultados en el canvas superpuesto y actualiza gazeTracker.
+ * Detecta dirección de mirada Y expresiones faciales.
  *
  * @param {HTMLVideoElement}  videoElement
  * @param {HTMLCanvasElement} canvasElement
  */
 export function startFaceDetection(videoElement, canvasElement) {
-    // Reemplaza cualquier bucle anterior
     if (faceDetectionInterval) clearInterval(faceDetectionInterval);
 
     faceDetectionInterval = setInterval(async () => {
@@ -56,27 +57,38 @@ export function startFaceDetection(videoElement, canvasElement) {
 
             const results = await faceapi
                 .detectAllFaces(videoElement, options)
-                .withFaceLandmarks();
+                .withFaceLandmarks()
+                .withFaceExpressions();
 
             const ctx = canvasElement.getContext('2d');
             ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-            const displaySize  = { width: canvasElement.width, height: canvasElement.height };
-            const resized      = faceapi.resizeResults(results, displaySize);
+            const displaySize = { width: canvasElement.width, height: canvasElement.height };
+            const resized     = faceapi.resizeResults(results, displaySize);
 
             if (resized.length > 0) {
-                const face             = resized[0];
-                const isLooking        = analyzeGazeDirection(face.landmarks);
+                const face      = resized[0];
+                const isLooking = analyzeGazeDirection(face.landmarks);
 
-                // Dibuja landmarks y bounding box
+                // Actualizar tracker de mirada
+                gazeTracker.update(isLooking);
+
+                // Actualizar tracker de expresiones
+                if (face.expressions) {
+                    expressionTracker.update(face.expressions);
+                }
+
+                // Dibujar landmarks y bounding box
                 faceapi.draw.drawFaceLandmarks(canvasElement, face);
                 _drawGazeBox(ctx, face.detection.box, isLooking);
 
-                gazeTracker.update(isLooking);
             } else {
                 const el = document.getElementById('current-state');
-                el.textContent = 'Estado: No detectado';
-                el.className   = 'status center';
+                if (el) {
+                    el.textContent = 'Estado: No detectado';
+                    el.className   = 'status center';
+                }
+                expressionTracker.updateUI(null);
             }
         } catch (err) {
             console.error('Error en detección facial:', err);
@@ -122,28 +134,17 @@ export function analyzeGazeDirection(landmarks) {
         Math.pow(rightCenter.y - leftCenter.y, 2)
     );
 
-    // Los ojos deben estar aproximadamente a la misma altura (simetría)
     const verticalDiff  = Math.abs(leftCenter.y - rightCenter.y);
     const isSymmetrical = verticalDiff < (eyeDistance * 0.1);
 
-    // Los ojos deben estar por encima de la nariz (mirada al frente)
-    const midEyeY    = (leftCenter.y + rightCenter.y) / 2;
-    const vertGaze   = midEyeY - noseCenter.y;
-
-    // EAR calculado (disponible para extensiones futuras)
-    // const avgEAR = (calculateEAR(leftEye) + calculateEAR(rightEye)) / 2;
+    const midEyeY  = (leftCenter.y + rightCenter.y) / 2;
+    const vertGaze = midEyeY - noseCenter.y;
 
     return isSymmetrical && vertGaze < -5 && eyeDistance > 30;
 }
 
 // ---- Helpers privados -------------------------------------------------
 
-/**
- * Dibuja el rectángulo de color y la etiqueta de estado sobre el canvas.
- * @param {CanvasRenderingContext2D} ctx
- * @param {{ x: number, y: number, width: number, height: number }} box
- * @param {boolean} isLooking
- */
 function _drawGazeBox(ctx, box, isLooking) {
     const color = isLooking ? '#2ecc71' : '#e74c3c';
     const fill  = isLooking ? 'rgba(46, 204, 113, 0.7)' : 'rgba(231, 76, 60, 0.7)';

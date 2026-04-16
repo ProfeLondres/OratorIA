@@ -4,11 +4,12 @@
  * iniciar cámara → detección facial → detener → reiniciar estadísticas.
  */
 
-import { gazeTracker }                        from './gazeTracker.js';
+import { gazeTracker }                           from './gazeTracker.js';
 import { startFaceDetection, stopFaceDetection } from './faceDetection.js';
-import { updateGazeChart }                    from './charts.js';
-import { saveSession }                        from './sessionStore.js';
-import { getCurrentProfile }                  from './studentProfile.js';
+import { updateGazeChart }                       from './charts.js';
+import { saveSession }                           from './sessionStore.js';
+import { getCurrentProfile }                     from './studentProfile.js';
+import { expressionTracker }                     from './expressionTracker.js';
 
 let videoStream = null;
 
@@ -48,6 +49,7 @@ export async function startTracking(modelsLoaded) {
         trackingStatus.className   = 'status';
 
         gazeTracker.lastUpdateTime = Date.now();
+        expressionTracker.reset();
     } catch (err) {
         trackingStatus.textContent = `Error al acceder a la cámara: ${err.message}. Conceda permisos de cámara.`;
         trackingStatus.className   = 'status error';
@@ -81,16 +83,19 @@ export function stopTracking() {
     const profile = getCurrentProfile();
     if (profile && gazeTracker.totalTime >= 5) {
         saveSession({
-            studentName:    profile.name,
-            grade:          profile.grade,
-            topic:          profile.topic,
-            type:           'gaze',
-            duration:       gazeTracker.totalTime,
-            gazePercentage: gazeTracker.getLookingPercentage(),
-            fillerRate:     null,
-            fillerCount:    null,
-            totalWords:     null,
-            evaluation:     _gazeEvaluation(gazeTracker.getLookingPercentage()),
+            studentName:       profile.name,
+            grade:             profile.grade,
+            topic:             profile.topic,
+            type:              'gaze',
+            duration:          gazeTracker.totalTime,
+            gazePercentage:    gazeTracker.getLookingPercentage(),
+            fillerRate:        null,
+            fillerCount:       null,
+            totalWords:        null,
+            dominantExpression: expressionTracker.getDominantExpression(),
+            confidenceScore:   expressionTracker.getConfidenceScore(),
+            expressionProfile: expressionTracker.getProfile(),
+            evaluation:        _gazeEvaluation(gazeTracker.getLookingPercentage()),
         });
     }
 }

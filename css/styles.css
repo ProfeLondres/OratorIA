@@ -696,6 +696,76 @@ button:disabled {
 }
 
 /* ============================================================
+   DETECCIÓN DE EMOCIONES
+   ============================================================ */
+
+/* Badge en vivo (se actualiza ~10fps) */
+.emotion-live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: #f0f0f0;
+    color: #666;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 6px 0 10px;
+    transition: background 0.3s, color 0.3s;
+}
+
+.emotion-positive {
+    background: #d4edda;
+    color: #155724;
+}
+
+.emotion-negative {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* Contenedor de barras de perfil */
+.emotion-profile-bars {
+    margin: 8px 0 14px;
+}
+
+/* Una fila de barra de emoción */
+.emotion-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.emotion-bar-label {
+    font-size: 12px;
+    color: #555;
+    min-width: 160px;
+    flex-shrink: 0;
+}
+
+.emotion-bar-track {
+    flex: 1;
+    height: 8px;
+    background: #e8e8e8;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.emotion-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
+.emotion-bar-pct {
+    font-size: 11px;
+    color: #999;
+    min-width: 32px;
+    text-align: right;
+}
+
+/* ============================================================
    MEDIDOR DE VOLUMEN (VU METER)
    ============================================================ */
 .vu-meter-container {

@@ -7,6 +7,7 @@
 
 import { gazeTracker }                           from './gazeTracker.js';
 import { speechTracker }                         from './speechTracker.js';
+import { expressionTracker }                     from './expressionTracker.js';
 import { startFaceDetection, stopFaceDetection } from './faceDetection.js';
 import { initSpeechRecognition, getRecognition,
          _updateVolumeMeter, _updateAudioStats,
@@ -86,6 +87,7 @@ export async function startCombinedAnalysis(modelsLoaded, speechRecognitionSuppo
         gazeTracker.lastUpdateTime = Date.now();
         speechTracker.reset();
         speechTracker.start();
+        expressionTracker.reset();
 
         // Actualizar datos cada segundo
         combinedUpdateInterval = setInterval(() => {
@@ -159,22 +161,25 @@ export function stopCombinedAnalysis() {
             .sort((a, b) => b[1] - a[1])
             .slice(0, 6);
         saveSession({
-            studentName:     profile.name,
-            grade:           profile.grade,
-            topic:           profile.topic,
-            type:            'combined',
+            studentName:        profile.name,
+            grade:              profile.grade,
+            topic:              profile.topic,
+            type:               'combined',
             duration,
-            gazePercentage:  gazeTracker.getLookingPercentage(),
-            fillerRate:      speechTracker.getFillerRate(),
-            fillerCount:     speechTracker.fillerWords,
-            totalWords:      speechTracker.totalWords,
-            wordsPerMinute:  speechTracker.getWordsPerMinute(),
-            avgVolume:       audio.avgVolume,
-            peakVolume:      audio.peakVolume,
-            pauseCount:      audio.pauseCount,
-            longestPauseSec: audio.longestPauseSec,
+            gazePercentage:     gazeTracker.getLookingPercentage(),
+            fillerRate:         speechTracker.getFillerRate(),
+            fillerCount:        speechTracker.fillerWords,
+            totalWords:         speechTracker.totalWords,
+            wordsPerMinute:     speechTracker.getWordsPerMinute(),
+            avgVolume:          audio.avgVolume,
+            peakVolume:         audio.peakVolume,
+            pauseCount:         audio.pauseCount,
+            longestPauseSec:    audio.longestPauseSec,
             topFillers,
-            evaluation:      evalText,
+            dominantExpression: expressionTracker.getDominantExpression(),
+            confidenceScore:    expressionTracker.getConfidenceScore(),
+            expressionProfile:  expressionTracker.getProfile(),
+            evaluation:         evalText,
         });
     }
 }

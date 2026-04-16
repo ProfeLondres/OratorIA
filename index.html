@@ -127,6 +127,15 @@
 
                 <div id="current-state" class="status center">Estado: No detectado</div>
 
+                <!-- Análisis de emociones -->
+                <h3>Estado Emocional</h3>
+                <div id="gaze-emotion-live" class="emotion-live-badge">Sin detección</div>
+                <div class="stat-box">
+                    <span>Índice de confianza:</span>
+                    <span id="gaze-confidence" class="stat-value">—</span>
+                </div>
+                <div id="gaze-emotion-profile" class="emotion-profile-bars"></div>
+
                 <div class="chart-container">
                     <canvas id="gaze-chart"></canvas>
                 </div>
@@ -293,6 +302,15 @@
                 <div id="combined-evaluation" class="status center">
                     Evaluación: No hay datos suficientes
                 </div>
+
+                <!-- Análisis de emociones combinado -->
+                <h3>Estado Emocional</h3>
+                <div id="combined-emotion-live" class="emotion-live-badge">Sin detección</div>
+                <div class="stat-box">
+                    <span>Índice de confianza:</span>
+                    <span id="combined-confidence" class="stat-value">—</span>
+                </div>
+                <div id="combined-emotion-profile" class="emotion-profile-bars"></div>
 
                 <h3>Transcripción en tiempo real</h3>
                 <div id="combined-transcript" class="transcript-container">
