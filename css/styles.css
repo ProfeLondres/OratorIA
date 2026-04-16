@@ -671,6 +671,59 @@ button:disabled {
     color: #bbb;
 }
 
+/* ============================================================
+   MEDIDOR DE VOLUMEN (VU METER)
+   ============================================================ */
+.vu-meter-container {
+    margin: 8px 0 18px;
+}
+
+.vu-meter-track {
+    position: relative;
+    height: 18px;
+    background: #e8e8e8;
+    border-radius: 9px;
+    overflow: hidden;
+}
+
+.vu-bar {
+    height: 100%;
+    border-radius: 9px;
+    transition: width 0.05s linear;
+    min-width: 3px;
+}
+
+.vu-low  { background: linear-gradient(to right, #2ecc71, #27ae60); }
+.vu-mid  { background: linear-gradient(to right, #f39c12, #e67e22); }
+.vu-high { background: linear-gradient(to right, #e74c3c, #c0392b); }
+
+.vu-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: #aaa;
+    margin-top: 3px;
+    padding: 0 2px;
+}
+
+/* ============================================================
+   Marcas de referencia en el VU meter (33% y 66%)
+   ============================================================ */
+.vu-meter-track::before,
+.vu-meter-track::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.5);
+    z-index: 1;
+    pointer-events: none;
+}
+
+.vu-meter-track::before { left: 33%; }
+.vu-meter-track::after  { left: 66%; }
+
 /* Responsive historial */
 @media (max-width: 768px) {
     .history-table {

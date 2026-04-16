@@ -8,11 +8,15 @@
 import { gazeTracker }                           from './gazeTracker.js';
 import { speechTracker }                         from './speechTracker.js';
 import { startFaceDetection, stopFaceDetection } from './faceDetection.js';
-import { initSpeechRecognition, getRecognition } from './speech.js';
+import { initSpeechRecognition, getRecognition,
+         _updateVolumeMeter, _updateAudioStats,
+         _resetVolumeMeter, _resetAudioStats }   from './speech.js';
 import { updateCombinedChart, resetCombinedChart } from './charts.js';
 import { formatTime }                            from './utils.js';
 import { saveSession }                           from './sessionStore.js';
 import { getCurrentProfile }                     from './studentProfile.js';
+import { startAudioAnalysis, stopAudioAnalysis,
+         getAudioStats, resetAudioStats }        from './audioAnalyzer.js';
 
 let combinedStream        = null;
 let combinedUpdateInterval = null;
@@ -71,6 +75,12 @@ export async function startCombinedAnalysis(modelsLoaded, speechRecognitionSuppo
         if (!getRecognition()) initSpeechRecognition();
         getRecognition().start();
 
+        // Analizador de audio usando el mismo stream de combinedStream
+        resetAudioStats();
+        startAudioAnalysis(combinedStream, (volumePct, isSilent) => {
+            _updateVolumeMeter(volumePct, isSilent, 'combined');
+        });
+
         // Reiniciar trackers
         gazeTracker.reset();
         gazeTracker.lastUpdateTime = Date.now();
@@ -84,6 +94,10 @@ export async function startCombinedAnalysis(modelsLoaded, speechRecognitionSuppo
                 gazeTracker.getLookingPercentage(),
                 speechTracker.getFillerRate()
             );
+            _updateAudioStats('combined');
+            // Sincronizar WPM al panel combinado
+            const wpmEl = document.getElementById('combined-wpm');
+            if (wpmEl) wpmEl.textContent = speechTracker.getWordsPerMinute();
         }, 1000);
 
         document.getElementById('start-combined').disabled = true;
@@ -115,10 +129,15 @@ export function stopCombinedAnalysis() {
 
     clearInterval(combinedUpdateInterval);
     stopFaceDetection(combinedCanvas);
+    stopAudioAnalysis();
 
     speechTracker.stop();
     gazeTracker.update(gazeTracker.isLooking);
     gazeTracker.lastUpdateTime = null;
+
+    // Mostrar stats finales y resetear medidores
+    _updateAudioStats('combined');
+    _resetVolumeMeter('combined');
 
     document.getElementById('start-combined').disabled = false;
     document.getElementById('stop-combined').disabled  = true;
@@ -130,22 +149,27 @@ export function stopCombinedAnalysis() {
     _isCombinedRunning = false;
 
     // Guardar sesión si hubo datos suficientes
-    const profile = getCurrentProfile();
+    const profile  = getCurrentProfile();
     const duration = Math.max(gazeTracker.totalTime, speechTracker.totalTime);
     if (profile && duration >= 5) {
-        const evalEl = document.getElementById('combined-evaluation');
+        const evalEl  = document.getElementById('combined-evaluation');
         const evalText = evalEl ? evalEl.textContent.replace('Evaluación: ', '') : null;
+        const audio    = getAudioStats();
         saveSession({
-            studentName:    profile.name,
-            grade:          profile.grade,
-            topic:          profile.topic,
-            type:           'combined',
+            studentName:     profile.name,
+            grade:           profile.grade,
+            topic:           profile.topic,
+            type:            'combined',
             duration,
-            gazePercentage: gazeTracker.getLookingPercentage(),
-            fillerRate:     speechTracker.getFillerRate(),
-            fillerCount:    speechTracker.fillerWords,
-            totalWords:     speechTracker.totalWords,
-            evaluation:     evalText,
+            gazePercentage:  gazeTracker.getLookingPercentage(),
+            fillerRate:      speechTracker.getFillerRate(),
+            fillerCount:     speechTracker.fillerWords,
+            totalWords:      speechTracker.totalWords,
+            wordsPerMinute:  speechTracker.getWordsPerMinute(),
+            avgVolume:       audio.avgVolume,
+            pauseCount:      audio.pauseCount,
+            longestPauseSec: audio.longestPauseSec,
+            evaluation:      evalText,
         });
     }
 }
@@ -154,7 +178,13 @@ export function stopCombinedAnalysis() {
 export function resetCombinedStats() {
     gazeTracker.reset();
     speechTracker.reset();
+    resetAudioStats();
     resetCombinedChart();
+    _resetVolumeMeter('combined');
+    _resetAudioStats('combined');
+
+    const wpmEl = document.getElementById('combined-wpm');
+    if (wpmEl) wpmEl.textContent = '0';
 
     const combinedStatus = document.getElementById('combined-status');
     combinedStatus.textContent = 'Estadísticas reiniciadas.';

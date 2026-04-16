@@ -4,13 +4,16 @@
  * inicializar → iniciar → detener → reiniciar estadísticas.
  */
 
-import { speechTracker }   from './speechTracker.js';
-import { saveSession }     from './sessionStore.js';
-import { getCurrentProfile } from './studentProfile.js';
+import { speechTracker }                             from './speechTracker.js';
+import { saveSession }                               from './sessionStore.js';
+import { getCurrentProfile }                         from './studentProfile.js';
+import { startAudioAnalysis, stopAudioAnalysis,
+         getAudioStats, resetAudioStats }            from './audioAnalyzer.js';
 
-let recognition        = null;
-let isSpeechRunning    = false;
+let recognition          = null;
+let isSpeechRunning      = false;
 let speechUpdateInterval = null;
+let audioStream          = null;
 
 /** @returns {SpeechRecognition|null} Instancia actual del reconocimiento. */
 export function getRecognition() {
@@ -30,9 +33,9 @@ export function initSpeechRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     recognition = new SpeechRecognition();
 
-    recognition.lang            = 'es-ES';
-    recognition.continuous      = true;
-    recognition.interimResults  = true;
+    recognition.lang           = 'es-ES';
+    recognition.continuous     = true;
+    recognition.interimResults = true;
 
     recognition.onresult = (event) => {
         const last       = event.results.length - 1;
@@ -55,7 +58,7 @@ export function initSpeechRecognition() {
 }
 
 /**
- * Inicia el reconocimiento de voz.
+ * Inicia el reconocimiento de voz + análisis de audio (Web Audio API).
  * @param {boolean} speechRecognitionSupported
  */
 export async function startSpeechRecognition(speechRecognitionSupported) {
@@ -68,13 +71,25 @@ export async function startSpeechRecognition(speechRecognitionSupported) {
     }
 
     try {
+        // Solicitar stream de audio para el analizador
+        audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
         if (!recognition) initSpeechRecognition();
 
         recognition.start();
         isSpeechRunning = true;
         speechTracker.start();
+        resetAudioStats();
 
-        speechUpdateInterval = setInterval(() => speechTracker.updateTime(), 1000);
+        // Iniciar análisis de audio con callback para el medidor de volumen
+        startAudioAnalysis(audioStream, (volumePct, isSilent) => {
+            _updateVolumeMeter(volumePct, isSilent, 'speech');
+        });
+
+        speechUpdateInterval = setInterval(() => {
+            speechTracker.updateTime();
+            _updateAudioStats('speech');
+        }, 1000);
 
         document.getElementById('start-speech').disabled = true;
         document.getElementById('stop-speech').disabled  = false;
@@ -86,7 +101,7 @@ export async function startSpeechRecognition(speechRecognitionSupported) {
     }
 }
 
-/** Detiene el reconocimiento de voz y congela las estadísticas. */
+/** Detiene el reconocimiento de voz, el analizador y congela las estadísticas. */
 export function stopSpeechRecognition() {
     if (!recognition) return;
 
@@ -94,6 +109,16 @@ export function stopSpeechRecognition() {
     isSpeechRunning = false;
     clearInterval(speechUpdateInterval);
     speechTracker.stop();
+    stopAudioAnalysis();
+
+    if (audioStream) {
+        audioStream.getTracks().forEach(t => t.stop());
+        audioStream = null;
+    }
+
+    // Mostrar stats finales de audio
+    _updateAudioStats('speech');
+    _resetVolumeMeter('speech');
 
     document.getElementById('start-speech').disabled = false;
     document.getElementById('stop-speech').disabled  = true;
@@ -105,27 +130,86 @@ export function stopSpeechRecognition() {
     // Guardar sesión si hubo datos suficientes
     const profile = getCurrentProfile();
     if (profile && speechTracker.totalTime >= 5) {
-        const cat = speechTracker.getFillerCategory();
+        const cat   = speechTracker.getFillerCategory();
+        const audio = getAudioStats();
         saveSession({
-            studentName:    profile.name,
-            grade:          profile.grade,
-            topic:          profile.topic,
-            type:           'speech',
-            duration:       speechTracker.totalTime,
-            gazePercentage: null,
-            fillerRate:     speechTracker.getFillerRate(),
-            fillerCount:    speechTracker.fillerWords,
-            totalWords:     speechTracker.totalWords,
-            evaluation:     cat.text,
+            studentName:     profile.name,
+            grade:           profile.grade,
+            topic:           profile.topic,
+            type:            'speech',
+            duration:        speechTracker.totalTime,
+            gazePercentage:  null,
+            fillerRate:      speechTracker.getFillerRate(),
+            fillerCount:     speechTracker.fillerWords,
+            totalWords:      speechTracker.totalWords,
+            wordsPerMinute:  speechTracker.getWordsPerMinute(),
+            avgVolume:       audio.avgVolume,
+            pauseCount:      audio.pauseCount,
+            longestPauseSec: audio.longestPauseSec,
+            evaluation:      cat.text,
         });
     }
 }
 
-/** Reinicia las estadísticas de voz. */
+/** Reinicia las estadísticas de voz y audio. */
 export function resetSpeechStats() {
     speechTracker.reset();
+    resetAudioStats();
+    _resetVolumeMeter('speech');
+    _resetAudioStats('speech');
 
     const speechStatus = document.getElementById('speech-status');
     speechStatus.textContent = 'Estadísticas reiniciadas.';
     speechStatus.className   = 'status';
 }
+
+// ---- Helpers de UI -------------------------------------------------------
+
+/**
+ * Actualiza el medidor de volumen visual.
+ * @param {number}  volumePct   0-100
+ * @param {boolean} isSilent
+ * @param {string}  prefix      'speech' | 'combined'
+ */
+function _updateVolumeMeter(volumePct, isSilent, prefix) {
+    const bar = document.getElementById(`${prefix}-volume-bar`);
+    if (!bar) return;
+
+    bar.style.width = `${volumePct}%`;
+
+    // Color: verde → amarillo → rojo según nivel
+    if (volumePct < 30)      bar.className = 'vu-bar vu-low';
+    else if (volumePct < 65) bar.className = 'vu-bar vu-mid';
+    else                     bar.className = 'vu-bar vu-high';
+}
+
+/**
+ * Actualiza las estadísticas de audio en el DOM.
+ * @param {string} prefix 'speech' | 'combined'
+ */
+function _updateAudioStats(prefix) {
+    const stats = getAudioStats();
+    const pc = document.getElementById(`${prefix}-pause-count`);
+    const lp = document.getElementById(`${prefix}-longest-pause`);
+    if (pc) pc.textContent = stats.pauseCount;
+    if (lp) lp.textContent = `${stats.longestPauseSec}s`;
+}
+
+/** Pone el medidor en cero. */
+function _resetVolumeMeter(prefix) {
+    const bar = document.getElementById(`${prefix}-volume-bar`);
+    if (bar) { bar.style.width = '0%'; bar.className = 'vu-bar vu-low'; }
+}
+
+/** Pone las stats de audio en cero en el DOM. */
+function _resetAudioStats(prefix) {
+    const pc = document.getElementById(`${prefix}-pause-count`);
+    const lp = document.getElementById(`${prefix}-longest-pause`);
+    const wpm = document.getElementById('words-per-minute');
+    if (pc)  pc.textContent  = '0';
+    if (lp)  lp.textContent  = '0s';
+    if (wpm) wpm.textContent = '0';
+}
+
+// Exportar helpers para que combined.js los reutilice
+export { _updateVolumeMeter, _updateAudioStats, _resetVolumeMeter, _resetAudioStats };

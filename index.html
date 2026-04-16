@@ -168,6 +168,31 @@
                 <span>Muletillas por minuto:</span>
                 <span id="filler-rate" class="stat-value">0</span>
             </div>
+            <div class="stat-box">
+                <span>Palabras por minuto:</span>
+                <span id="words-per-minute" class="stat-value">0</span>
+            </div>
+            <div class="stat-box">
+                <span>Pausas detectadas (&gt;2s):</span>
+                <span id="speech-pause-count" class="stat-value">0</span>
+            </div>
+            <div class="stat-box">
+                <span>Pausa más larga:</span>
+                <span id="speech-longest-pause" class="stat-value">0s</span>
+            </div>
+
+            <!-- Medidor de volumen (VU Meter) -->
+            <h3>Nivel de volumen</h3>
+            <div class="vu-meter-container">
+                <div class="vu-meter-track">
+                    <div id="speech-volume-bar" class="vu-bar vu-low" style="width:0%"></div>
+                </div>
+                <div class="vu-labels">
+                    <span class="vu-label-low">Bajo</span>
+                    <span class="vu-label-mid">Medio</span>
+                    <span class="vu-label-high">Alto</span>
+                </div>
+            </div>
 
             <div id="filler-category" class="status center">
                 Categoría: No hay datos suficientes
@@ -238,6 +263,31 @@
                 <div class="stat-box">
                     <span>Muletillas por minuto:</span>
                     <span id="combined-filler-rate" class="stat-value">0</span>
+                </div>
+                <div class="stat-box">
+                    <span>Palabras por minuto:</span>
+                    <span id="combined-wpm" class="stat-value">0</span>
+                </div>
+                <div class="stat-box">
+                    <span>Pausas detectadas (&gt;2s):</span>
+                    <span id="combined-pause-count" class="stat-value">0</span>
+                </div>
+                <div class="stat-box">
+                    <span>Pausa más larga:</span>
+                    <span id="combined-longest-pause" class="stat-value">0s</span>
+                </div>
+
+                <!-- Medidor de volumen combinado -->
+                <h3>Nivel de volumen</h3>
+                <div class="vu-meter-container">
+                    <div class="vu-meter-track">
+                        <div id="combined-volume-bar" class="vu-bar vu-low" style="width:0%"></div>
+                    </div>
+                    <div class="vu-labels">
+                        <span class="vu-label-low">Bajo</span>
+                        <span class="vu-label-mid">Medio</span>
+                        <span class="vu-label-high">Alto</span>
+                    </div>
                 </div>
 
                 <div id="combined-evaluation" class="status center">

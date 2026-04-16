@@ -124,6 +124,12 @@ export const speechTracker = {
         return minutes > 0 ? this.fillerWords / minutes : 0;
     },
 
+    /** @returns {number} Palabras por minuto */
+    getWordsPerMinute() {
+        const minutes = this.totalTime / 60;
+        return minutes > 0 ? Math.round(this.totalWords / minutes) : 0;
+    },
+
     /**
      * @returns {{ category: string, text: string, class: string }}
      */
@@ -138,10 +144,11 @@ export const speechTracker = {
 
     /** Actualiza los elementos del DOM del panel de voz. */
     updateUI() {
-        document.getElementById('recording-time').textContent = formatTime(this.totalTime);
-        document.getElementById('total-words').textContent    = this.totalWords;
-        document.getElementById('filler-count').textContent   = this.fillerWords;
-        document.getElementById('filler-rate').textContent    = this.getFillerRate().toFixed(1);
+        document.getElementById('recording-time').textContent   = formatTime(this.totalTime);
+        document.getElementById('total-words').textContent      = this.totalWords;
+        document.getElementById('filler-count').textContent     = this.fillerWords;
+        document.getElementById('filler-rate').textContent      = this.getFillerRate().toFixed(1);
+        document.getElementById('words-per-minute').textContent = this.getWordsPerMinute();
 
         const cat = this.getFillerCategory();
         const el  = document.getElementById('filler-category');
