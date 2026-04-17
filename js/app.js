@@ -107,12 +107,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
     document.getElementById('reset-combined').addEventListener('click', resetCombinedStats);
 
-    // -- Ocultar instrucciones --
-    document.getElementById('hide-instructions')
-        .addEventListener('click', () => {
-            document.getElementById('setup-instructions').style.display = 'none';
-        });
-
     // -- Navegación por pestañas --
     document.querySelectorAll('.tab').forEach(btn => {
         btn.addEventListener('click', () => {
