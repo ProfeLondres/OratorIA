@@ -1175,6 +1175,12 @@ button:disabled {
     box-shadow: 0 4px 20px rgba(0,0,0,.5);
 }
 
+/* El video-wrapper debe ser negro puro en modo oscuro
+   (var(--gray-900) se invierte a casi blanco en dark mode) */
+[data-theme="dark"] .video-wrapper {
+    background: #020617;
+}
+
 [data-theme="dark"] .stat-box {
     background: #0f172a;
     border-color: #334155;
@@ -1192,6 +1198,46 @@ button:disabled {
     background: #334155;
 }
 
+/* Títulos y textos dentro de los paneles */
+[data-theme="dark"] .stats-container h2,
+[data-theme="dark"] .audio-container h2 {
+    color: #e2e8f0;
+    border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .stats-container h3,
+[data-theme="dark"] .audio-container h3 {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .stat-box span:first-child {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .stat-value {
+    color: #a5b4fc;
+}
+
+[data-theme="dark"] .center {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .status {
+    background: #0f172a;
+    color: #94a3b8;
+    border-left-color: #475569;
+}
+
+[data-theme="dark"] .filler-stat-box.low-filler      { background: #064e3b; color: #6ee7b7; border-color: #065f46; }
+[data-theme="dark"] .filler-stat-box.moderate-filler { background: #451a03; color: #fcd34d; border-color: #78350f; }
+[data-theme="dark"] .filler-stat-box.high-filler     { background: #431407; color: #fdba74; border-color: #7c2d12; }
+[data-theme="dark"] .filler-stat-box.extreme-filler  { background: #450a0a; color: #fca5a5; border-color: #7f1d1d; }
+
+[data-theme="dark"] .history-summary {
+    background: #1e1b4b;
+    border-color: #312e81;
+}
+
 [data-theme="dark"] .history-table tbody tr:hover {
     background: #1e1b4b;
 }
@@ -1200,9 +1246,16 @@ button:disabled {
     border-color: #1e293b;
 }
 
+[data-theme="dark"] .history-controls input,
+[data-theme="dark"] .form-group input {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
 [data-theme="dark"] .tab.active {
     background: #0f172a;
-    color: var(--primary-mid);
+    color: #a5b4fc;
 }
 
 [data-theme="dark"] .tab {
@@ -1216,7 +1269,21 @@ button:disabled {
 [data-theme="dark"] #loading-models {
     background: #1e1b4b;
     border-color: #312e81;
-    color: var(--primary-mid);
+    color: #a5b4fc;
+}
+
+[data-theme="dark"] .emotion-live-badge {
+    background: #1e293b;
+    border-color: #334155;
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .transcript-container p {
+    color: #475569;
+}
+
+[data-theme="dark"] .history-desc {
+    color: #64748b;
 }
 
 /* ============================================================
