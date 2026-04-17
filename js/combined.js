@@ -9,22 +9,16 @@ import { gazeTracker }                           from './gazeTracker.js';
 import { speechTracker }                         from './speechTracker.js';
 import { expressionTracker }                     from './expressionTracker.js';
 import { startFaceDetection, stopFaceDetection } from './faceDetection.js';
-import { initSpeechRecognition, getRecognition,
-         _updateVolumeMeter, _updateAudioStats,
-         _resetVolumeMeter, _resetAudioStats }   from './speech.js';
+import { initSpeechRecognition, getRecognition } from './speech.js';
 import { updateCombinedChart, resetCombinedChart } from './charts.js';
-import { formatTime }                            from './utils.js';
 import { saveSession }                           from './sessionStore.js';
 import { getCurrentProfile }                     from './studentProfile.js';
 import { startAudioAnalysis, stopAudioAnalysis,
          getAudioStats, resetAudioStats }        from './audioAnalyzer.js';
 
-let combinedStream        = null;
+let combinedStream         = null;
 let combinedUpdateInterval = null;
-
-// Variable mutable exportada como getter para que los bindings de ES Modules
-// reflejen siempre el valor actual en los módulos importadores.
-let _isCombinedRunning = false;
+let _isCombinedRunning     = false;
 
 /** @returns {boolean} */
 export function isCombinedRunning() {
@@ -36,9 +30,9 @@ export function isCombinedRunning() {
 /**
  * Solicita cámara + micrófono e inicia el análisis completo.
  * @param {boolean} modelsLoaded
- * @param {boolean} speechRecognitionSupported
+ * @param {boolean} speechSupported
  */
-export async function startCombinedAnalysis(modelsLoaded, speechRecognitionSupported) {
+export async function startCombinedAnalysis(modelsLoaded, speechSupported) {
     const combinedStatus = document.getElementById('combined-status');
 
     if (!modelsLoaded) {
@@ -47,17 +41,13 @@ export async function startCombinedAnalysis(modelsLoaded, speechRecognitionSuppo
         return;
     }
 
-    if (!speechRecognitionSupported) {
-        combinedStatus.textContent = 'Tu navegador no soporta reconocimiento de voz. Usa Chrome.';
-        combinedStatus.className   = 'status error';
-        return;
-    }
-
     try {
-        combinedStream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
-        });
+        // Solicitar cámara (+ micrófono solo si el navegador soporta speech)
+        const mediaConstraints = speechSupported
+            ? { audio: true, video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } }
+            : { audio: false, video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } };
+
+        combinedStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
 
         const combinedVideo  = document.getElementById('combined-video');
         const combinedCanvas = document.getElementById('combined-canvas');
@@ -72,15 +62,19 @@ export async function startCombinedAnalysis(modelsLoaded, speechRecognitionSuppo
             startFaceDetection(combinedVideo, combinedCanvas);
         };
 
-        // Reconocimiento de voz
-        if (!getRecognition()) initSpeechRecognition();
-        getRecognition().start();
+        // Reconocimiento de voz (solo si es soportado)
+        if (speechSupported) {
+            if (!getRecognition()) initSpeechRecognition();
+            getRecognition().start();
+        }
 
-        // Analizador de audio usando el mismo stream de combinedStream
+        // Analizador de audio usando el stream (solo si hay audio)
         resetAudioStats();
-        startAudioAnalysis(combinedStream, (volumePct, isSilent) => {
-            _updateVolumeMeter(volumePct, isSilent, 'combined');
-        });
+        if (speechSupported) {
+            startAudioAnalysis(combinedStream, (volumePct) => {
+                _updateVolumeMeter(volumePct);
+            });
+        }
 
         // Reiniciar trackers
         gazeTracker.reset();
@@ -96,21 +90,23 @@ export async function startCombinedAnalysis(modelsLoaded, speechRecognitionSuppo
                 gazeTracker.getLookingPercentage(),
                 speechTracker.getFillerRate()
             );
-            _updateAudioStats('combined');
-            // Sincronizar WPM al panel combinado
+            _updateAudioStats();
             const wpmEl = document.getElementById('combined-wpm');
             if (wpmEl) wpmEl.textContent = speechTracker.getWordsPerMinute();
         }, 1000);
 
         document.getElementById('start-combined').disabled = true;
         document.getElementById('stop-combined').disabled  = false;
-        combinedStatus.textContent = 'Análisis combinado iniciado. Comience su presentación...';
-        combinedStatus.className   = 'status success';
+
+        combinedStatus.textContent = speechSupported
+            ? 'Análisis combinado iniciado. Comience su presentación...'
+            : 'Análisis de mirada y expresiones iniciado (sin reconocimiento de voz).';
+        combinedStatus.className = 'status success';
 
         _isCombinedRunning = true;
     } catch (err) {
         combinedStatus.textContent =
-            `Error al iniciar análisis: ${err.message}. Verifique permisos de cámara y micrófono.`;
+            `Error al iniciar análisis: ${err.message}. Verifique permisos de cámara.`;
         combinedStatus.className = 'status error';
     }
 }
@@ -127,7 +123,7 @@ export function stopCombinedAnalysis() {
     combinedVideo.srcObject = null;
 
     const rec = getRecognition();
-    if (rec) rec.stop();
+    if (rec) { try { rec.stop(); } catch (_) {} }
 
     clearInterval(combinedUpdateInterval);
     stopFaceDetection(combinedCanvas);
@@ -137,9 +133,8 @@ export function stopCombinedAnalysis() {
     gazeTracker.update(gazeTracker.isLooking);
     gazeTracker.lastUpdateTime = null;
 
-    // Mostrar stats finales y resetear medidores
-    _updateAudioStats('combined');
-    _resetVolumeMeter('combined');
+    _updateAudioStats();
+    _resetVolumeMeter();
 
     document.getElementById('start-combined').disabled = false;
     document.getElementById('stop-combined').disabled  = true;
@@ -190,11 +185,18 @@ export function resetCombinedStats() {
     speechTracker.reset();
     resetAudioStats();
     resetCombinedChart();
-    _resetVolumeMeter('combined');
-    _resetAudioStats('combined');
+    expressionTracker.reset();
+    _resetVolumeMeter();
 
-    const wpmEl = document.getElementById('combined-wpm');
-    if (wpmEl) wpmEl.textContent = '0';
+    const els = {
+        'combined-pause-count':   '0',
+        'combined-longest-pause': '0s',
+        'combined-wpm':           '0',
+    };
+    for (const [id, val] of Object.entries(els)) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+    }
 
     const combinedStatus = document.getElementById('combined-status');
     combinedStatus.textContent = 'Estadísticas reiniciadas.';
@@ -203,10 +205,6 @@ export function resetCombinedStats() {
 
 // ---- Evaluación global ------------------------------------------------
 
-/**
- * Actualiza el panel de evaluación combinada según los datos actuales.
- * Solo actúa cuando hay más de 10 segundos de datos en ambos trackers.
- */
 export function updateCombinedEvaluation() {
     const lookingPct = gazeTracker.getLookingPercentage();
     const fillerRate = speechTracker.getFillerRate();
@@ -218,21 +216,18 @@ export function updateCombinedEvaluation() {
         return;
     }
 
-    // Evaluación de contacto visual
     let eyeEval;
     if      (lookingPct >= 70) eyeEval = 'excelente contacto visual';
     else if (lookingPct >= 50) eyeEval = 'buen contacto visual';
     else if (lookingPct >= 30) eyeEval = 'contacto visual moderado';
     else                       eyeEval = 'contacto visual insuficiente';
 
-    // Evaluación de muletillas
     let fillerEval;
     if      (fillerRate <= 3)  fillerEval = 'uso mínimo de muletillas';
     else if (fillerRate <= 8)  fillerEval = 'uso moderado de muletillas';
     else if (fillerRate <= 15) fillerEval = 'uso elevado de muletillas';
     else                       fillerEval = 'uso excesivo de muletillas';
 
-    // Evaluación global
     let cssClass;
     if (lookingPct >= 60 && fillerRate <= 5) {
         el.textContent = `Evaluación: Excelente presentación (${eyeEval}, ${fillerEval})`;
@@ -249,4 +244,28 @@ export function updateCombinedEvaluation() {
     }
 
     el.className = `status center ${cssClass}`;
+}
+
+// ---- Helpers de UI (audio) locales ------------------------------------
+
+function _updateVolumeMeter(volumePct) {
+    const bar = document.getElementById('combined-volume-bar');
+    if (!bar) return;
+    bar.style.width = `${volumePct}%`;
+    bar.className   = volumePct < 30 ? 'vu-bar vu-low'
+                    : volumePct < 65 ? 'vu-bar vu-mid'
+                    : 'vu-bar vu-high';
+}
+
+function _resetVolumeMeter() {
+    const bar = document.getElementById('combined-volume-bar');
+    if (bar) { bar.style.width = '0%'; bar.className = 'vu-bar vu-low'; }
+}
+
+function _updateAudioStats() {
+    const stats = getAudioStats();
+    const pc = document.getElementById('combined-pause-count');
+    const lp = document.getElementById('combined-longest-pause');
+    if (pc) pc.textContent = stats.pauseCount;
+    if (lp) lp.textContent = `${stats.longestPauseSec}s`;
 }

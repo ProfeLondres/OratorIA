@@ -216,5 +216,3 @@ function _resetAudioStats(prefix) {
     if (wpm) wpm.textContent = '0';
 }
 
-// Exportar helpers para que combined.js los reutilice
-export { _updateVolumeMeter, _updateAudioStats, _resetVolumeMeter, _resetAudioStats };

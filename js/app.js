@@ -152,9 +152,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('start-speech').disabled = true;
 
             const combinedStatus = document.getElementById('combined-status');
-            combinedStatus.textContent = msg;
-            combinedStatus.className   = 'status error';
-            document.getElementById('start-combined').disabled = true;
+            combinedStatus.textContent =
+                'Reconocimiento de voz no disponible. El análisis continuará con cámara y expresiones.';
+            combinedStatus.className = 'status warning';
         }
 
         modelsLoaded = true;

@@ -9,12 +9,14 @@ import { calculateCenter }         from './utils.js';
 import { gazeTracker }             from './gazeTracker.js';
 import { expressionTracker }       from './expressionTracker.js';
 
-let faceDetectionInterval = null;
+let faceDetectionInterval  = null;
+let expressionModelLoaded  = false;
 
 // ---- Carga de modelos -------------------------------------------------
 
 /**
- * Descarga los cuatro modelos necesarios de face-api.js.
+ * Descarga los modelos necesarios de face-api.js.
+ * faceExpressionNet es opcional: si falla, el sistema continúa sin expresiones.
  * @param {(progress: number, total: number) => void} [onProgress]
  */
 export async function loadFaceApiModels(onProgress) {
@@ -28,7 +30,15 @@ export async function loadFaceApiModels(onProgress) {
     await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL).then(tick);
     await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL).then(tick);
     await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL).then(tick);
-    await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL).then(tick);
+
+    try {
+        await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+        expressionModelLoaded = true;
+    } catch (err) {
+        console.warn('faceExpressionNet no pudo cargarse; las expresiones estarán deshabilitadas.', err);
+    } finally {
+        tick(); // siempre avanzar el progreso al 100%
+    }
 }
 
 // ---- Detección facial en tiempo real ----------------------------------
@@ -55,10 +65,13 @@ export function startFaceDetection(videoElement, canvasElement) {
                 maxResults: 1
             });
 
-            const results = await faceapi
+            const detection = faceapi
                 .detectAllFaces(videoElement, options)
-                .withFaceLandmarks()
-                .withFaceExpressions();
+                .withFaceLandmarks();
+
+            const results = await (expressionModelLoaded
+                ? detection.withFaceExpressions()
+                : detection);
 
             const ctx = canvasElement.getContext('2d');
             ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -73,8 +86,8 @@ export function startFaceDetection(videoElement, canvasElement) {
                 // Actualizar tracker de mirada
                 gazeTracker.update(isLooking);
 
-                // Actualizar tracker de expresiones
-                if (face.expressions) {
+                // Actualizar tracker de expresiones (solo si el modelo cargó)
+                if (expressionModelLoaded && face.expressions) {
                     expressionTracker.update(face.expressions);
                 }
 
