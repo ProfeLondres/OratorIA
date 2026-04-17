@@ -54,10 +54,6 @@ export async function startCombinedAnalysis(modelsLoaded, speechSupported) {
         combinedVideo.srcObject = combinedStream;
         combinedVideo.muted     = true;
 
-        // Mostrar el área de video
-        const wrapper = combinedVideo.closest('.video-wrapper');
-        if (wrapper) wrapper.style.display = '';
-
         combinedVideo.onloadedmetadata = () => {
             const w = combinedVideo.clientWidth;
             const h = combinedVideo.videoHeight / (combinedVideo.videoWidth / w);
@@ -132,10 +128,8 @@ export function stopCombinedAnalysis() {
     clearInterval(combinedUpdateInterval);
     stopFaceDetection(combinedCanvas);
 
-    // Limpiar canvas y ocultar el área de video
-    combinedCanvas.width = combinedCanvas.width; // fuerza borrado completo
-    const wrapper = combinedVideo.closest('.video-wrapper');
-    if (wrapper) wrapper.style.display = 'none';
+    // Forzar borrado completo del canvas
+    combinedCanvas.width = combinedCanvas.width;
     stopAudioAnalysis();
 
     speechTracker.stop();

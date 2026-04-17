@@ -47,7 +47,6 @@ body {
     position: relative;
     width: 100%;
     line-height: 0; /* elimina espacio fantasma debajo del video */
-    display: none;
 }
 
 .stats-container {

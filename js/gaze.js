@@ -35,10 +35,6 @@ export async function startTracking(modelsLoaded) {
         const overlayCanvas = document.getElementById('overlay-canvas');
         video.srcObject     = videoStream;
 
-        // Mostrar el área de video
-        const wrapper = video.closest('.video-wrapper');
-        if (wrapper) wrapper.style.display = '';
-
         video.onloadedmetadata = () => {
             const w = video.clientWidth;
             const h = video.videoHeight / (video.videoWidth / w);
@@ -73,10 +69,8 @@ export function stopTracking() {
 
     stopFaceDetection(overlayCanvas);
 
-    // Limpiar canvas y ocultar el área de video
-    overlayCanvas.width = overlayCanvas.width; // fuerza borrado completo
-    const wrapper = video.closest('.video-wrapper');
-    if (wrapper) wrapper.style.display = 'none';
+    // Forzar borrado completo del canvas
+    overlayCanvas.width = overlayCanvas.width;
 
     document.getElementById('start-tracking').disabled = false;
     document.getElementById('stop-tracking').disabled  = true;
