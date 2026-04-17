@@ -34,6 +34,30 @@
     --shadow-lg:      0 10px 40px rgba(0,0,0,.14), 0 4px 12px rgba(0,0,0,.08);
 }
 
+/* ---- Modo oscuro: sobreescribe variables cuando body tiene data-theme="dark" ---- */
+[data-theme="dark"] {
+    --gray-50:    #1e293b;
+    --gray-100:   #0f172a;
+    --gray-200:   #1e293b;
+    --gray-300:   #334155;
+    --gray-400:   #64748b;
+    --gray-500:   #94a3b8;
+    --gray-600:   #cbd5e1;
+    --gray-800:   #e2e8f0;
+    --gray-900:   #f1f5f9;
+    --primary-light: #1e1b4b;
+    --primary-mid:   #6366f1;
+    --success-bg:    #064e3b;
+    --success-text:  #6ee7b7;
+    --warning-bg:    #451a03;
+    --warning-text:  #fcd34d;
+    --error-bg:      #450a0a;
+    --error-text:    #fca5a5;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,.4);
+    --shadow:    0 4px 16px rgba(0,0,0,.5);
+    --shadow-lg: 0 10px 40px rgba(0,0,0,.6);
+}
+
 /* ---- Reset y base ------------------------------------------------- */
 *, *::before, *::after { box-sizing: border-box; }
 
@@ -44,6 +68,7 @@ body {
     background: var(--gray-100);
     color: var(--gray-800);
     line-height: 1.5;
+    transition: background .3s, color .3s;
 }
 
 /* ---- Contenedor principal ----------------------------------------- */
@@ -58,10 +83,14 @@ body {
    ============================================================ */
 .header {
     background: linear-gradient(135deg, var(--gray-900) 0%, #312e81 50%, var(--primary) 100%);
-    padding: 28px 36px;
+    padding: 22px 28px;
     margin-bottom: 0;
     position: relative;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
 }
 
 .header::before {
@@ -76,6 +105,7 @@ body {
     align-items: center;
     gap: 18px;
     position: relative;
+    flex: 1;
 }
 
 .header-logo {
@@ -1050,6 +1080,143 @@ button:disabled {
     position: relative;
     width: 100%;
     line-height: 0;
+}
+
+/* ============================================================
+   TOGGLE MODO CLARO / OSCURO
+   ============================================================ */
+.theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,.12);
+    border: 1.5px solid rgba(255,255,255,.2);
+    border-radius: 99px;
+    padding: 6px 12px;
+    cursor: pointer;
+    color: rgba(255,255,255,.85);
+    font-size: 14px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    transition: background .2s, border-color .2s;
+    transform: none;
+    box-shadow: none;
+}
+
+.theme-toggle:hover {
+    background: rgba(255,255,255,.22);
+    border-color: rgba(255,255,255,.4);
+    transform: none;
+    box-shadow: none;
+}
+
+.theme-toggle-track {
+    width: 36px;
+    height: 20px;
+    background: rgba(255,255,255,.25);
+    border-radius: 99px;
+    position: relative;
+    transition: background .3s;
+    flex-shrink: 0;
+}
+
+[data-theme="dark"] .theme-toggle-track {
+    background: var(--primary-mid);
+}
+
+.theme-toggle-thumb {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+    box-shadow: 0 1px 4px rgba(0,0,0,.3);
+}
+
+[data-theme="dark"] .theme-toggle-thumb {
+    transform: translateX(16px);
+}
+
+.theme-toggle-icon {
+    font-size: 15px;
+    line-height: 1;
+}
+
+/* ---- Transiciones suaves en elementos clave al cambiar tema ---- */
+.stats-container,
+.camera-container,
+.audio-container,
+.history-container,
+.stat-box,
+.tab-content,
+.transcript-container,
+.chart-container,
+.modal-box,
+.filler-stat-box,
+.history-summary,
+.emotion-live-badge,
+.status,
+.form-group input,
+.history-controls input {
+    transition: background .3s, color .3s, border-color .3s, box-shadow .3s;
+}
+
+/* ---- Ajustes específicos para modo oscuro ---- */
+[data-theme="dark"] .stats-container,
+[data-theme="dark"] .camera-container,
+[data-theme="dark"] .audio-container,
+[data-theme="dark"] .history-container,
+[data-theme="dark"] .modal-box {
+    background: #1e293b;
+    box-shadow: 0 4px 20px rgba(0,0,0,.5);
+}
+
+[data-theme="dark"] .stat-box {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .transcript-container,
+[data-theme="dark"] .chart-container {
+    background: #0f172a;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .progress-container,
+[data-theme="dark"] .vu-meter-track,
+[data-theme="dark"] .emotion-bar-track {
+    background: #334155;
+}
+
+[data-theme="dark"] .history-table tbody tr:hover {
+    background: #1e1b4b;
+}
+
+[data-theme="dark"] .history-table tbody tr {
+    border-color: #1e293b;
+}
+
+[data-theme="dark"] .tab.active {
+    background: #0f172a;
+    color: var(--primary-mid);
+}
+
+[data-theme="dark"] .tab {
+    background: rgba(255,255,255,.06);
+}
+
+[data-theme="dark"] .tab:hover {
+    background: rgba(255,255,255,.12);
+}
+
+[data-theme="dark"] #loading-models {
+    background: #1e1b4b;
+    border-color: #312e81;
+    color: var(--primary-mid);
 }
 
 /* ============================================================

@@ -25,6 +25,7 @@ import { startCombinedAnalysis, stopCombinedAnalysis,
 
 import { showTab, showNotification,
          updateLoadingProgress }                     from './ui.js';
+import { initThemeToggle }                           from './themeToggle.js';
 
 import { formatTime }                                from './utils.js';
 
@@ -67,6 +68,9 @@ speechTracker.onCombinedUpdate = () => {
 
 // ---- Inicialización ---------------------------------------------------
 document.addEventListener('DOMContentLoaded', async () => {
+
+    // -- Modo claro / oscuro --
+    initThemeToggle();
 
     // -- Botones de seguimiento de mirada --
     document.getElementById('start-tracking').addEventListener('click', () => {
