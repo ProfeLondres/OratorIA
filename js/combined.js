@@ -65,6 +65,13 @@ export async function startCombinedAnalysis(modelsLoaded, speechSupported) {
         // Reconocimiento de voz (solo si es soportado)
         if (speechSupported) {
             if (!getRecognition()) initSpeechRecognition();
+            // Sobreescribir onend para que se reinicie mientras el modo
+            // combinado esté activo (isSpeechRunning no aplica aquí)
+            getRecognition().onend = () => {
+                if (_isCombinedRunning) {
+                    try { getRecognition().start(); } catch (_) {}
+                }
+            };
             getRecognition().start();
         }
 
@@ -115,6 +122,9 @@ export async function startCombinedAnalysis(modelsLoaded, speechSupported) {
 export function stopCombinedAnalysis() {
     if (!combinedStream) return;
 
+    // Marcar como detenido ANTES de rec.stop() para que onend no reinicie
+    _isCombinedRunning = false;
+
     combinedStream.getTracks().forEach(t => t.stop());
     combinedStream = null;
 
@@ -145,8 +155,6 @@ export function stopCombinedAnalysis() {
     const combinedStatus = document.getElementById('combined-status');
     combinedStatus.textContent = 'Análisis combinado detenido.';
     combinedStatus.className   = 'status';
-
-    _isCombinedRunning = false;
 
     // Guardar sesión si hubo datos suficientes
     const profile  = getCurrentProfile();
