@@ -82,8 +82,10 @@
 
             <!-- Cámara -->
             <div class="camera-container">
-                <video id="video" autoplay muted playsinline></video>
-                <canvas id="overlay-canvas"></canvas>
+                <div class="video-wrapper">
+                    <video id="video" autoplay muted playsinline></video>
+                    <canvas id="overlay-canvas"></canvas>
+                </div>
 
                 <div class="controls">
                     <button id="start-tracking">Iniciar Seguimiento</button>
@@ -243,8 +245,10 @@
 
             <!-- Cámara combinada -->
             <div class="camera-container">
-                <video id="combined-video" autoplay playsinline></video>
-                <canvas id="combined-canvas"></canvas>
+                <div class="video-wrapper">
+                    <video id="combined-video" autoplay playsinline></video>
+                    <canvas id="combined-canvas"></canvas>
+                </div>
 
                 <div class="controls">
                     <button id="start-combined">Iniciar Análisis Completo</button>
