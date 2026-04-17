@@ -82,7 +82,7 @@ body {
    ENCABEZADO
    ============================================================ */
 .header {
-    background: linear-gradient(135deg, var(--gray-900) 0%, #312e81 50%, var(--primary) 100%);
+    background: linear-gradient(135deg, #0f172a 0%, #312e81 50%, #4f46e5 100%);
     padding: 22px 28px;
     margin-bottom: 0;
     position: relative;
@@ -201,7 +201,7 @@ body {
     display: flex;
     gap: 4px;
     padding: 16px 24px 0;
-    background: var(--gray-900);
+    background: #0f172a;
     border-bottom: none;
 }
 
